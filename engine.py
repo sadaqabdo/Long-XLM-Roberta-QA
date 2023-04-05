@@ -110,7 +110,7 @@ class Engine:
 
         print("train_loss", sum(losses) / len(losses))
 
-    def validate(self, valid_dataloader):
+    def validate(self, valid_dataloader, epoch):
         losses = []
         all_start_logits = []
         all_end_logits = []
@@ -142,7 +142,7 @@ class Engine:
 
             losses.append(loss.item())
 
-        print("Valid Loss: {: >4.5f}".format(sum(losses) / len(losses)))
+        print("Epoch {} Valid Loss: {: >4.5f}".format(epoch ,sum(losses) / len(losses)))
         return (all_start_logits, all_end_logits)
 
     def predict(self, eval_dataloader):
