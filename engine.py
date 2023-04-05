@@ -79,9 +79,7 @@ class Engine:
             )
 
             # fp16
-            with torch.autocast(
-                device_type=self.config["device"], dtype=torch.float16
-            ):
+            with torch.autocast(device_type=self.config["device"], dtype=torch.float16):
                 output = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -142,7 +140,7 @@ class Engine:
 
             losses.append(loss.item())
 
-        print("Epoch {} Valid Loss: {: >4.5f}".format(epoch ,sum(losses) / len(losses)))
+        print("Epoch {} Valid Loss: {: >4.5f}".format(epoch, sum(losses) / len(losses)))
         return (all_start_logits, all_end_logits)
 
     def evaluate(self, eval_dataloader):

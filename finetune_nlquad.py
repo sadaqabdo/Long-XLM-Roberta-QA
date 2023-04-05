@@ -1,9 +1,10 @@
 from transformers import XLMRobertaTokenizerFast
 
 from config import config
-from dataset import make_dataloaders
+from dataset import make_dataloaders, prepare_features, read_nlquad
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
+from processing import calculate_metrics
 
 if __name__ == "__main__":
 
@@ -28,4 +29,7 @@ if __name__ == "__main__":
         engine.validate(valid_loader, epoch)
         engine.save_model(epoch)
 
-    engine.evaluate(eval_loader)
+    eval_data = read_nlquad(config["eval_path"])
+    eval_dataset = prepare_features(eval_data, config["num_examples"] / 2, mode="eval")
+    evaluation_predictions = engine.evaluate(eval_loader)
+    calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
