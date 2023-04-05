@@ -82,14 +82,12 @@ class Engine:
             with torch.autocast(
                 device_type=self.config["device"], dtype=torch.bfloat16
             ):
-                print("inputs inputed")
                 output = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     start_positions=targets_start,
                     end_positions=targets_end,
                 )
-                print("output outputed")
 
                 loss = output["loss"]
                 loss.backward()
