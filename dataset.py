@@ -85,23 +85,26 @@ def set_loader(split, batch_size, columns_to_remove=None, mode="train"):
 
 def make_dataloaders(config):
 
-    train_dataset = read_nlquad(config["train_path"])
-    valid_dataset = read_nlquad(config["valid_path"])
-    eval_dataset = read_nlquad(config["eval_path"])
+    train_data = read_nlquad(config["train_path"])
+    valid_data = read_nlquad(config["valid_path"])
+    eval_data = read_nlquad(config["eval_path"])
 
     # to change the number of examples, change the num_examples in config
     train_dataset = prepare_features(
-        train_dataset, config["num_examples"], mode="train"
+        train_data, config["num_examples"], mode="train"
     )
-    valid_dataset = prepare_features(
-        valid_dataset, config["num_examples"] / 2, mode="valid"
+    valid_dataset_for_train = prepare_features(
+        valid_data, config["num_examples"] / 2, mode="train"
+    )
+    valid_dataset_for_valideval = prepare_features(
+        valid_data, config["num_examples"] / 2, mode="valid"
     )
     eval_dataset = prepare_features(
-        eval_dataset, config["num_examples"] / 2, mode="eval"
+        eval_data, config["num_examples"] / 2, mode="eval"
     )
 
     train_loader = set_loader(train_dataset, config["batch_size"], mode="train")
-    valid_loader = set_loader(valid_dataset, config["batch_size"], mode="valid")
+    valid_loader = set_loader(valid_dataset_for_train, config["batch_size"], mode="valid")
     eval_loader = set_loader(
         eval_dataset,
         config["batch_size"],
