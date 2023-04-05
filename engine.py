@@ -112,7 +112,7 @@ class Engine:
 
         print("train_loss", sum(losses) / len(losses))
 
-    def evaluate(self, valid_dataloader):
+    def validate(self, valid_dataloader):
         losses = []
         all_start_logits = []
         all_end_logits = []
