@@ -16,6 +16,7 @@ config = {
     "num_validating_examples": 3017,
     "num_evaluation_examples": 3024,
     "gradient_accumulation_steps": 1,
+    "print_freq": 10,
     "push_to_hub": False,
     "train_path": "./data/NLQuAD_train.json",
     "valid_path": "./data/NLQuAD_valid.json",

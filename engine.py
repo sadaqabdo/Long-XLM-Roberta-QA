@@ -47,12 +47,16 @@ def get_scheduler(split_dataloader, optimizer, config):
     print(f"Total Training Steps: {num_training_steps}")
     return scheduler
 
+def get_scaler():
+    scaler = torch.cuda.amp.GradScaler()
+    return scaler
 
 class Engine:
     def __init__(self, model, optimizer, scheduler, config):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.scaler = get_scaler()
         self.config = config
 
     def save_checkpoint(self, train_loss, valid_loss, epoch):
@@ -86,7 +90,7 @@ class Engine:
             )
 
             # fp16
-            with torch.autocast(device_type=self.config["device"], dtype=torch.float16):
+            with torch.cuda.amp.autocast():
                 output = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -95,7 +99,7 @@ class Engine:
                 )
 
                 loss = output["loss"]
-                loss.backward()
+                self.scaler.scale(loss).backward()
 
             count += input_ids.size(0)
 
@@ -106,14 +110,20 @@ class Engine:
                 max_norm=self.config["max_grad_norm"],
             )
 
-            self.optimizer.step()
+            self.scaler.step(self.optimizer.step())
             self.scheduler.step()
+            self.scaler.update()
             self.optimizer.zero_grad()
 
-            if (batch_idx % 2 == 0) or (batch_idx + 1) == len(train_dataloader):
-                print(f"Epoch {epoch+1} \t 'Train Loss: {loss.item()}")
+            if batch_idx % self.config["gradient_accumulation_steps"] == 0:
+                self.scheduler.step()
 
-        print("train_loss", sum(losses) / len(losses))
+            if batch_idx % self.config["print_freq"] == 0:
+                print(
+                    f"Epoch: {epoch+1} \t Batch: {batch_idx+1} \t Loss: {loss.item()}"
+                )
+            
+        print("Training Loss: ", sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
     def validate(self, valid_dataloader, epoch):
@@ -142,8 +152,9 @@ class Engine:
             loss = output.loss
 
             losses.append(loss.item())
+        
+        print(f"Epoch: {epoch+1} \t Validation Loss: {sum(losses) / len(losses)}")
 
-        print("Epoch {} Valid Loss: {: >4.5f}".format(epoch, sum(losses) / len(losses)))
         return sum(losses) / len(losses)
 
     def evaluate(self, eval_dataloader):
