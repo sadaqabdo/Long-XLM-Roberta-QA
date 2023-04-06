@@ -13,8 +13,13 @@ from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 if __name__ == "__main__":
+
+    assert torch.cuda.device_count() > 0, "No GPU found"
+    assert config["device"] == "cuda", "GPU not found"
+    assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
 
     random.seed(config["seed"])
     np.random.seed(config["seed"])
@@ -29,6 +34,7 @@ if __name__ == "__main__":
     xlm_roberta = XLMRobertaLongForQuestionAnswering.from_pretrained(
         config["hub_model_id"], use_auth_token=config["access_token"]
     ).to(config["device"])
+    
     config["tokenizer"] = tokenizer
 
     train_loader, valid_loader, eval_loader = make_dataloaders(config)

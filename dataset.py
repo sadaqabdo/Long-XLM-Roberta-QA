@@ -80,7 +80,6 @@ def make_dataloaders(config):
     valid_data = read_nlquad(config["valid_path"])
     eval_data = read_nlquad(config["eval_path"])
 
-    # to change the number of examples, change the num_examples in config
     train_dataset = prepare_features(
         train_data, config["num_training_examples"], mode="train"
     )

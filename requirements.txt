@@ -2,3 +2,4 @@ torch
 transformers
 sentencepiece
 datasets
+nltk

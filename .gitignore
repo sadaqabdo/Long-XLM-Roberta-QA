@@ -1,0 +1,28 @@
+__pycache__/
+    *.pyc
+    *.pyo
+    *.pyd
+    *.so
+    *.dylib
+    *.egg-info
+    *.egg
+    .cache
+    .coverage
+    .tox
+    .eggs
+    *.egg
+    .eggs
+    .cache
+    .coverage
+    .tox
+    .idea
+    .vscode
+    .pytest_cache
+    .mypy_cache
+    .coverage
+    .coverage.*
+    .coverage.*
+    .coverage.*
+    .coverage.*
+    .coverage.*
+
