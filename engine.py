@@ -144,7 +144,7 @@ class Engine:
             losses.append(loss.item())
 
         print("Epoch {} Valid Loss: {: >4.5f}".format(epoch, sum(losses) / len(losses)))
-        return  sum(losses) / len(losses)
+        return sum(losses) / len(losses)
 
     def evaluate(self, eval_dataloader):
         all_start_logits = []

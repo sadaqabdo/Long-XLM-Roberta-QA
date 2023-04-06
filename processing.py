@@ -358,7 +358,7 @@ def calculate_metrics(examples, features, predictions: Tuple[np.ndarray, np.ndar
     print("mean Precision = ", np.mean(precision_np))
     print("mean EM = ", np.mean(em_np))
     print("mean Area Intersection over Union or Jaccard Index = ", np.mean(JI_np))
-    
+
     return {
         "f1": np.mean(f1_np),
         "recall": np.mean(recall_np),

@@ -58,28 +58,19 @@ def prepare_features(split_data, num_examples, mode="train"):
     return split_dataset
 
 
-def set_loader(split, batch_size, columns_to_remove=None, mode="train"):
+def set_loader(split, batch_size, columns_to_remove=None):
     if columns_to_remove is not None:
         split = split.remove_columns(columns_to_remove)
 
-    if mode == "train":
-        split_loader = DataLoader(
-            split,
-            batch_size=int(batch_size),
-            num_workers=1,
-            pin_memory=True,
-            drop_last=False,
-            shuffle=True,
-        )
-    else:
-        split_loader = DataLoader(
-            split,
-            batch_size=int(batch_size),
-            num_workers=1,
-            pin_memory=True,
-            drop_last=False,
-            shuffle=False,
-        )
+    split_loader = DataLoader(
+        split,
+        batch_size=int(batch_size),
+        num_workers=1,
+        pin_memory=True,
+        drop_last=False,
+        shuffle=True,
+    )
+
     return split_loader
 
 
@@ -90,23 +81,21 @@ def make_dataloaders(config):
     eval_data = read_nlquad(config["eval_path"])
 
     # to change the number of examples, change the num_examples in config
-    train_dataset = prepare_features(train_data, config["num_examples"], mode="train")
-    valid_dataset_for_train = prepare_features(
-        valid_data, config["num_examples"] / 2, mode="train"
+    train_dataset = prepare_features(
+        train_data, config["num_training_examples"], mode="train"
     )
-    valid_dataset_for_valideval = prepare_features(
-        valid_data, config["num_examples"] / 2, mode="valid"
+    valid_dataset = prepare_features(
+        valid_data, config["num_validating_examples"], mode="train"
     )
-    eval_dataset = prepare_features(eval_data, config["num_examples"] / 2, mode="eval")
+    eval_dataset = prepare_features(
+        eval_data, config["num_evaluation_examples"], mode="eval"
+    )
 
-    train_loader = set_loader(train_dataset, config["batch_size"], mode="train")
-    valid_loader = set_loader(
-        valid_dataset_for_train, config["batch_size"], mode="valid"
-    )
+    train_loader = set_loader(train_dataset, config["batch_size"])
+    valid_loader = set_loader(valid_dataset, config["batch_size"])
     eval_loader = set_loader(
         eval_dataset,
         config["batch_size"],
-        mode="eval",
         columns_to_remove=["example_id", "offset_mapping"],
     )
 
