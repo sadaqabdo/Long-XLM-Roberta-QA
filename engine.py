@@ -55,10 +55,17 @@ class Engine:
         self.scheduler = scheduler
         self.config = config
 
-    def save_model(self, epoch):
+    def save_checkpoint(self, train_loss, valid_loss, epoch):
         self.model.eval()
-        self.model.save_pretrained(
-            os.path.join(self.config["output_dir"], f"epoch_{epoch}")
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": self.scheduler.state_dict(),
+                "train_loss": train_loss,
+                "valid_loss": valid_loss,
+            },
+            os.path.join(self.config["output_dir"], f"epoch_{epoch}"),
         )
         self.model.train()
 
@@ -103,15 +110,14 @@ class Engine:
             self.scheduler.step()
             self.optimizer.zero_grad()
 
-            if (batch_idx % 2 == 0) or (batch_idx + 1) == len(self.train_dataloader):
+            if (batch_idx % 2 == 0) or (batch_idx + 1) == len(train_dataloader):
                 print(f"Epoch {epoch+1} \t 'Train Loss: {loss.item()}")
 
         print("train_loss", sum(losses) / len(losses))
+        return sum(losses) / len(losses)
 
     def validate(self, valid_dataloader, epoch):
         losses = []
-        all_start_logits = []
-        all_end_logits = []
 
         self.model.eval()
 
@@ -132,16 +138,13 @@ class Engine:
                     start_positions=targets_start,
                     end_positions=targets_end,
                 )
-            outputs_start, outputs_end = output.start_logits, output.end_logits
-            all_start_logits.append(outputs_start[0].cpu().numpy())
-            all_end_logits.append(outputs_end[0].cpu().numpy())
 
             loss = output.loss
 
             losses.append(loss.item())
 
         print("Epoch {} Valid Loss: {: >4.5f}".format(epoch, sum(losses) / len(losses)))
-        return (all_start_logits, all_end_logits)
+        return  sum(losses) / len(losses)
 
     def evaluate(self, eval_dataloader):
         all_start_logits = []

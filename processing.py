@@ -129,7 +129,7 @@ def postprocess_qa_predictions(
     predictions: Tuple[np.ndarray, np.ndarray],
     version_2_with_negative: bool = False,
     n_best_size: int = 20,
-    max_answer_length: int = 300,
+    max_answer_length: int = 1000,
     null_score_diff_threshold: float = 0.0,
 ):
     """
@@ -358,6 +358,14 @@ def calculate_metrics(examples, features, predictions: Tuple[np.ndarray, np.ndar
     print("mean Precision = ", np.mean(precision_np))
     print("mean EM = ", np.mean(em_np))
     print("mean Area Intersection over Union or Jaccard Index = ", np.mean(JI_np))
+    
+    return {
+        "f1": np.mean(f1_np),
+        "recall": np.mean(recall_np),
+        "precision": np.mean(precision_np),
+        "em": np.mean(em_np),
+        "JI": np.mean(JI_np),
+    }
 
 
 def prepare_train_features(examples):

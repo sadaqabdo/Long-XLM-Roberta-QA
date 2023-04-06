@@ -1,18 +1,21 @@
 import torch
 
 config = {
-    "epochs": 4,
-    "batch_size": 4,
+    "seed": 42,
+    "epochs": 5,
+    "batch_size": 12,
     "max_length": 4096,
-    "doc_stride": 128,
+    "doc_stride": -1,
     "learning_rate": 3e-05,
     "max_grad_norm": 10,  # try others
     "optimizer_type": "AdamW",
     "weight_decay": 1e-2,
     "epsilon": 1e-6,
     "fp16": True,
-    "warmup_steps": 100,
-    "num_examples": 2,
+    "warmup_steps": 1000,
+    "num_training_examples": 24541,
+    "num_validating_examples": 3017,
+    "num_evaluation_examples": 3024,
     "gradient_accumulation_steps": 1,
     "push_to_hub": False,
     "train_path": "./data/NLQuAD_train.json",
