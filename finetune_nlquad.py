@@ -38,15 +38,12 @@ if __name__ == "__main__":
 
     engine = Engine(xlm_roberta, optimizer, scheduler, config)
 
-    best_loss = np.inf
-
+    train_loss, valid_loss = 0, 0 
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         valid_loss = engine.validate(valid_loader, epoch)
 
-        if valid_loss < best_loss:
-            engine.save_checkpoint(train_loss, valid_loss, epoch)
-            best_loss = valid_loss
+    engine.save_checkpoint(train_loss, valid_loss, 5)
 
     eval_data = read_nlquad(config["eval_path"])
     eval_dataset = prepare_features(
