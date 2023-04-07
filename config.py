@@ -22,7 +22,7 @@ config = {
     "valid_path": "./data/NLQuAD_valid.json",
     "eval_path": "./data/NLQuAD_eval.json",
     "output_dir": "./",
-    "pad_on_right": "right",
+    "pad_on_right": True,
     "hub_model_id": "sadaqabdo/XLMRobertaLongForQuestionAnswering-base-squad2-512-4096",
     "access_token": "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",
     "device": "cuda" if torch.cuda.is_available() else "cpu",

@@ -2,7 +2,6 @@ import collections
 import re
 import string
 from collections import defaultdict
-from typing import Tuple
 
 import nltk
 import numpy as np
@@ -322,7 +321,7 @@ def postprocess_qa_predictions(
     return all_predictions
 
 
-def calculate_metrics(examples, features, predictions: Tuple[np.ndarray, np.ndarray]):
+def calculate_metrics(examples, features, predictions):
 
     all_predictions = postprocess_qa_predictions(examples, features, predictions)
     examples_df = examples.to_pandas()
