@@ -34,7 +34,7 @@ if __name__ == "__main__":
     xlm_roberta = XLMRobertaLongForQuestionAnswering.from_pretrained(
         config["hub_model_id"], use_auth_token=config["access_token"]
     ).to(config["device"])
-    
+
     config["tokenizer"] = tokenizer
 
     train_loader, valid_loader, eval_loader = make_dataloaders(config)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     engine = Engine(xlm_roberta, optimizer, scheduler, config)
 
-    train_loss, valid_loss = 0, 0 
+    train_loss, valid_loss = 0, 0
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         valid_loss = engine.validate(valid_loader, epoch)

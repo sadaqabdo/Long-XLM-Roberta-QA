@@ -47,9 +47,11 @@ def get_scheduler(split_dataloader, optimizer, config):
     print(f"Total Training Steps: {num_training_steps}")
     return scheduler
 
+
 def get_scaler():
     scaler = torch.cuda.amp.GradScaler()
     return scaler
+
 
 class Engine:
     def __init__(self, model, optimizer, scheduler, config):
@@ -122,7 +124,7 @@ class Engine:
                 print(
                     f"Epoch: {epoch+1} \t Batch: {batch_idx+1} \t Loss: {loss.item()}"
                 )
-            
+
         print("Training Loss: ", sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
@@ -152,7 +154,7 @@ class Engine:
             loss = output.loss
 
             losses.append(loss.item())
-        
+
         print(f"Epoch: {epoch+1} \t Validation Loss: {sum(losses) / len(losses)}")
 
         return sum(losses) / len(losses)
