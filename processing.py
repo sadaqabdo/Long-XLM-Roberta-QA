@@ -391,14 +391,6 @@ def prepare_train_features(examples):
     assert not np.isnan(tokenized_examples["end_positions"]).any()
     assert not np.isnan(tokenized_examples["input_ids"]).any()
     assert not np.isnan(tokenized_examples["attention_mask"]).any()
-
-    # create a random tensors and made one of them contain a nan value
-
-    rnd_tensor = torch.rand((4096,3))
-    rnd_tensor[0, 0] = np.nan
-
-    # check that the nan value is detected
-    assert torch.isnan(rnd_tensor).any()
     
     return tokenized_examples
 
