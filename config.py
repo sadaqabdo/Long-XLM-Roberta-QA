@@ -7,8 +7,7 @@ config = {
     "max_length": 4096,
     "doc_stride": 256,
     "learning_rate": 3e-05,
-    "max_grad_norm": 10,  # try others
-    "optimizer_type": "AdamW",
+    "max_grad_norm": 1.0,
     "weight_decay": 1e-2,
     "epsilon": 1e-6,
     "warmup_steps": 1000,

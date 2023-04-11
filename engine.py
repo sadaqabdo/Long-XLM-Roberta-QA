@@ -86,16 +86,18 @@ class Engine:
             )
 
             # fp16
-            output = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                start_positions=targets_start,
-                end_positions=targets_end,
-            )
+            with torch.cuda.amp.autocast(enabled=True):
+                output = self.model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    start_positions=targets_start,
+                    end_positions=targets_end,
+                )
 
-            loss = output["loss"]
+                loss = output["loss"]
+            
             loss.backward()
-
+            
             count += input_ids.size(0)
 
             losses.append(loss.item())

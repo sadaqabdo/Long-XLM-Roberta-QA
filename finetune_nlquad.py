@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import time
 
 import numpy as np
 import torch
@@ -17,9 +18,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 if __name__ == "__main__":
 
-    assert torch.cuda.device_count() > 0, "No GPU found"
-    assert config["device"] == "cuda", "GPU not found"
-    assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
+    #assert torch.cuda.device_count() > 0, "No GPU found"
+    #assert config["device"] == "cuda", "GPU not found"
+    #assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
 
     random.seed(config["seed"])
     np.random.seed(config["seed"])
@@ -45,10 +46,13 @@ if __name__ == "__main__":
     engine = Engine(xlm_roberta, optimizer, scheduler, config)
 
     train_loss, valid_loss = 0, 0
+    time_start = time.time()
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
+        print(f"Training Epoch {epoch} took: {time.time() - time_start}")
         valid_loss = engine.validate(valid_loader, epoch)
 
+    # 5 here is hardcoded, but it should be the number of the last epoch
     engine.save_checkpoint(train_loss, valid_loss, 5)
 
     eval_data = read_nlquad(config["eval_path"])
@@ -58,7 +62,8 @@ if __name__ == "__main__":
     print(f"Evaluating on {len(eval_dataset)} examples")
     evaluation_predictions = engine.evaluate(eval_loader)
     print("Calculating metrics")
+    eval_time = time.time()
     results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-
+    print(f"Evaluation took: {time.time() - eval_time}")
     with open("results.json", "w") as f:
         json.dump(results, f)
