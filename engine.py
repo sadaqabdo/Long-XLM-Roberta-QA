@@ -49,11 +49,16 @@ def get_scheduler(split_dataloader, optimizer, config):
     return scheduler
 
 
+def get_scaler():
+    scaler = torch.cuda.amp.GradScaler()
+    return scaler
+
 class Engine:
     def __init__(self, model, optimizer, scheduler, config):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.scaler = get_scaler()
         self.config = config
 
     def save_checkpoint(self, train_loss, valid_loss, epoch):
@@ -96,8 +101,8 @@ class Engine:
                 )
 
                 loss = output["loss"]
-            
-            loss.backward()
+                self.scaler.scale(loss).backward()
+
             
             count += input_ids.size(0)
 
@@ -108,8 +113,9 @@ class Engine:
                 max_norm=self.config["max_grad_norm"],
             )
 
-            self.optimizer.step()
+            self.scaler.step(self.optimizer.step())
             self.scheduler.step()
+            self.scaler.update()
             self.optimizer.zero_grad()
 
             if batch_idx % self.config["gradient_accumulation_steps"] == 0:
