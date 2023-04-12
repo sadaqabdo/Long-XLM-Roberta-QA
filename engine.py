@@ -117,7 +117,7 @@ class Engine:
             old_scaler = self.scaler.get_scale()
             self.scaler.update()
             new_scaler = self.scaler.get_scale()
-            if old_scaler != new_scaler:
+            if old_scaler > new_scaler:
                 self.scheduler.step()
             self.optimizer.zero_grad()
 
