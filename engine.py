@@ -121,6 +121,14 @@ class Engine:
                 self.scheduler.step()
             self.optimizer.zero_grad()
 
+            # if loss is nan, stop training, and print the start and end logits
+            # 
+            if math.isnan(loss.item()) or torch.isnan(loss).any():
+                print("Loss is nan, stopping training")
+                print("Start Logits: ", output["start_logits"])
+                print("End Logits: ", output["end_logits"])
+                break
+              
             if batch_idx % self.config["print_freq"] == 0:
                 print(
                     f"Epoch: {epoch+1} \t Batch: {batch_idx+1} \t Loss: {loss.item()}"
