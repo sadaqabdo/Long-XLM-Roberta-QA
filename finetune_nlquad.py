@@ -46,8 +46,6 @@ if __name__ == "__main__":
     engine = Engine(xlm_roberta, optimizer, scheduler, config)
 
     train_loss, valid_loss = 0, 0
-    engine.save_checkpoint(train_loss, valid_loss, 5)
-
     time_start = time.time()
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
