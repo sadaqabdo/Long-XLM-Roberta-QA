@@ -68,6 +68,7 @@ class Engine:
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
                 "scheduler_state_dict": self.scheduler.state_dict(),
+                "scaler_state_dict": self.scaler.state_dict(),
                 "train_loss": train_loss,
                 "valid_loss": valid_loss,
             },
@@ -92,7 +93,7 @@ class Engine:
             )
 
             # fp16
-            with torch.cuda.amp.autocast(enabled=True):
+            with torch.autocast(device_type=self.config['device'], dtype=torch.float16):
                 output = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -101,7 +102,8 @@ class Engine:
                 )
 
                 loss = output["loss"]
-                self.scaler.scale(loss).backward()
+            
+            self.scaler.scale(loss).backward()
 
             
             count += input_ids.size(0)
