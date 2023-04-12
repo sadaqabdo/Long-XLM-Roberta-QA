@@ -1,9 +1,7 @@
-import math
 import os
 
 import torch
 from tqdm import tqdm
-from transformers import get_linear_schedule_with_warmup
 
 
 def get_optimizer(model, config):
@@ -35,29 +33,14 @@ def get_optimizer(model, config):
     return optimizer
 
 
-def get_scheduler(split_dataloader, optimizer, config):
-    num_training_steps = math.ceil(len(split_dataloader) / 2) * config["epochs"]
-    num_warmup_steps = config["warmup_steps"]
-
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=num_training_steps,
-    )
-
-    print(f"Total Training Steps: {num_training_steps}")
-    return scheduler
-
-
 def get_scaler():
     scaler = torch.cuda.amp.GradScaler()
     return scaler
 
 class Engine:
-    def __init__(self, model, optimizer, scheduler, config):
+    def __init__(self, model, optimizer, config):
         self.model = model
         self.optimizer = optimizer
-        self.scheduler = scheduler
         self.scaler = get_scaler()
         self.config = config
 
@@ -67,7 +50,6 @@ class Engine:
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
-                "scheduler_state_dict": self.scheduler.state_dict(),
                 "scaler_state_dict": self.scaler.state_dict(),
                 "train_loss": train_loss,
                 "valid_loss": valid_loss,
@@ -77,7 +59,6 @@ class Engine:
         self.model.train()
 
     def train(self, train_dataloader, epoch):
-        count = 0
         losses = []
         self.model.zero_grad()
         self.model.train()
@@ -104,9 +85,7 @@ class Engine:
                 loss = output["loss"]
             
             self.scaler.scale(loss).backward()
-
-            
-            count += input_ids.size(0)
+            self.scaler.unscale_(self.optimizer)
 
             losses.append(loss.item())
 
@@ -115,13 +94,9 @@ class Engine:
                 max_norm=self.config["max_grad_norm"],
             )
 
-            self.scaler.step(self.optimizer.step())
-            self.scheduler.step()
+            self.scaler.step(self.optimizer)
             self.scaler.update()
             self.optimizer.zero_grad()
-
-            if batch_idx % self.config["gradient_accumulation_steps"] == 0:
-                self.scheduler.step()
 
             if batch_idx % self.config["print_freq"] == 0:
                 print(

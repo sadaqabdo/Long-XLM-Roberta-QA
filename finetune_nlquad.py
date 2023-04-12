@@ -10,7 +10,7 @@ from transformers import XLMRobertaTokenizerFast
 
 from config import config
 from dataset import make_dataloaders, prepare_features, read_nlquad
-from engine import Engine, get_optimizer, get_scheduler
+from engine import Engine, get_optimizer
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -42,9 +42,8 @@ if __name__ == "__main__":
     train_loader, valid_loader, eval_loader = make_dataloaders(config)
 
     optimizer = get_optimizer(xlm_roberta, config)
-    scheduler = get_scheduler(train_loader, optimizer, config)
 
-    engine = Engine(xlm_roberta, optimizer, scheduler, config)
+    engine = Engine(xlm_roberta, optimizer, config)
 
     train_loss, valid_loss = 0, 0
     engine.save_checkpoint(train_loss, valid_loss, 5)
