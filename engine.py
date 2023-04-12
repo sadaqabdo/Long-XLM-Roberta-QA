@@ -1,7 +1,9 @@
+import math
 import os
 
 import torch
 from tqdm import tqdm
+from transformers import get_linear_schedule_with_warmup
 
 
 def get_optimizer(model, config):
@@ -33,14 +35,29 @@ def get_optimizer(model, config):
     return optimizer
 
 
+def get_scheduler(split_dataloader, optimizer, config):
+    num_training_steps = math.ceil(len(split_dataloader) / 2) * config["epochs"]
+    num_warmup_steps = config["warmup_steps"]
+
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=num_warmup_steps,
+        num_training_steps=num_training_steps,
+    )
+
+    print(f"Total Training Steps: {num_training_steps}")
+    return scheduler
+
+
 def get_scaler():
     scaler = torch.cuda.amp.GradScaler()
     return scaler
 
 class Engine:
-    def __init__(self, model, optimizer, config):
+    def __init__(self, model, optimizer, scheduler, config):
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.scaler = get_scaler()
         self.config = config
 
@@ -50,6 +67,7 @@ class Engine:
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": self.scheduler.state_dict(),
                 "scaler_state_dict": self.scaler.state_dict(),
                 "train_loss": train_loss,
                 "valid_loss": valid_loss,
@@ -95,7 +113,11 @@ class Engine:
             )
 
             self.scaler.step(self.optimizer)
+            old_scaler = self.scaler.get_scale()
             self.scaler.update()
+            new_scaler = self.scaler.get_scale()
+            if old_scaler != new_scaler:
+                self.scheduler.step()
             self.optimizer.zero_grad()
 
             if batch_idx % self.config["print_freq"] == 0:
