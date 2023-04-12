@@ -27,9 +27,10 @@ def get_optimizer(model, config):
         },
     ]
 
-    optimizer = torch.optim.AdamW(
+    optimizer = torch.optim.Adam(
         optimizer_grouped_parameters,
         lr=config["learning_rate"],
+        eps=config["epsilon"],
     )
     return optimizer
 
@@ -40,8 +41,8 @@ def get_scheduler(split_dataloader, optimizer, config):
 
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=num_warmup_steps * config["gradient_accumulation_steps"],
-        num_training_steps=num_training_steps * config["gradient_accumulation_steps"],
+        num_warmup_steps=num_warmup_steps,
+        num_training_steps=num_training_steps,
     )
 
     print(f"Total Training Steps: {num_training_steps}")

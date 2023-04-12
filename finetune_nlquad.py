@@ -2,6 +2,7 @@ import json
 import os
 import random
 import time
+from datetime import timedelta
 
 import numpy as np
 import torch
@@ -46,24 +47,31 @@ if __name__ == "__main__":
     engine = Engine(xlm_roberta, optimizer, scheduler, config)
 
     train_loss, valid_loss = 0, 0
+    engine.save_checkpoint(train_loss, valid_loss, 5)
+
     time_start = time.time()
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
-        print(f"Training Epoch {epoch} took: {time.time() - time_start}")
+        end_epoch_time = time.time()
+        print(f"Training Epoch {epoch} took: {str(timedelta(end_epoch_time - time_start))}")
         valid_loss = engine.validate(valid_loader, epoch)
 
+    print(f"Training took: {str(timedelta(time.time() - time_start))}")
     # 5 here is hardcoded, but it should be the number of the last epoch
     engine.save_checkpoint(train_loss, valid_loss, 5)
 
+    print("Evaluating: \n")
     eval_data = read_nlquad(config["eval_path"])
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
     )
+    
     print(f"Evaluating on {len(eval_dataset)} examples")
     evaluation_predictions = engine.evaluate(eval_loader)
-    print("Calculating metrics")
+
+    print("Calculating metrics : \n")
     eval_time = time.time()
     results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-    print(f"Evaluation took: {time.time() - eval_time}")
-    with open("results.json", "w") as f:
+    print(f"Evaluation took: {str(timedelta(time.time() - eval_time))}")
+    with open("results.json", "w", encoding="utf-8") as f:
         json.dump(results, f)

@@ -9,7 +9,7 @@ config = {
     "learning_rate": 3e-05,
     "max_grad_norm": 1.0,
     "weight_decay": 1e-2,
-    "epsilon": 1e-6,
+    "epsilon": 1e-8,
     "warmup_steps": 1000,
     "num_training_examples": 24541,
     "num_validating_examples": 3017,
