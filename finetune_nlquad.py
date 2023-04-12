@@ -18,10 +18,9 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 if __name__ == "__main__":
-
-    #assert torch.cuda.device_count() > 0, "No GPU found"
-    #assert config["device"] == "cuda", "GPU not found"
-    #assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
+    # assert torch.cuda.device_count() > 0, "No GPU found"
+    # assert config["device"] == "cuda", "GPU not found"
+    # assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
 
     random.seed(config["seed"])
     np.random.seed(config["seed"])
@@ -53,10 +52,12 @@ if __name__ == "__main__":
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         end_epoch_time = time.time()
-        print(f"Training Epoch {epoch} took: {str(timedelta(end_epoch_time - time_start))}")
+        print(
+            f"Training Epoch {epoch} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
+        )
         valid_loss = engine.validate(valid_loader, epoch)
 
-    print(f"Training took: {str(timedelta(time.time() - time_start))}")
+    print(f"Training took: {str(timedelta(seconds=time.time() - time_start))}")
     # 5 here is hardcoded, but it should be the number of the last epoch
     engine.save_checkpoint(train_loss, valid_loss, 5)
 
@@ -65,13 +66,13 @@ if __name__ == "__main__":
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
     )
-    
+
     print(f"Evaluating on {len(eval_dataset)} examples")
     evaluation_predictions = engine.evaluate(eval_loader)
 
     print("Calculating metrics : \n")
     eval_time = time.time()
     results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-    print(f"Evaluation took: {str(timedelta(time.time() - eval_time))}")
+    print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
     with open("results.json", "w", encoding="utf-8") as f:
         json.dump(results, f)

@@ -53,6 +53,7 @@ def get_scaler():
     scaler = torch.cuda.amp.GradScaler()
     return scaler
 
+
 class Engine:
     def __init__(self, model, optimizer, scheduler, config):
         self.model = model
@@ -92,7 +93,7 @@ class Engine:
             )
 
             # fp16
-            with torch.autocast(device_type=self.config['device'], dtype=torch.float16):
+            with torch.autocast(device_type=self.config["device"], dtype=torch.float16):
                 output = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -101,7 +102,7 @@ class Engine:
                 )
 
                 loss = output["loss"]
-            
+
             self.scaler.scale(loss).backward()
             self.scaler.unscale_(self.optimizer)
 
@@ -174,7 +175,7 @@ class Engine:
 
             with torch.no_grad():
                 output = self.model(input_ids=input_ids, attention_mask=attention_mask)
-                
+
             outputs_start, outputs_end = output.start_logits, output.end_logits
             all_start_logits.append(outputs_start[0].cpu().numpy())
             all_end_logits.append(outputs_end[0].cpu().numpy())

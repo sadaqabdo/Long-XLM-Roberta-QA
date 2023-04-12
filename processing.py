@@ -127,7 +127,8 @@ def postprocess_qa_predictions(
     version_2_with_negative: bool = False,
     n_best_size: int = 20,
     max_answer_length: int = 1000,
-    null_score_diff_threshold: float = 0.0):
+    null_score_diff_threshold: float = 0.0,
+):
     all_start_logits, all_end_logits = predictions
 
     if len(predictions[0]) != len(features):
@@ -156,7 +157,7 @@ def postprocess_qa_predictions(
             end_logits = all_end_logits[feature_index]
 
             offset_mapping = features[feature_index]["offset_mapping"]
-          
+
             token_is_max_context = features[feature_index].get(
                 "token_is_max_context", None
             )
@@ -179,7 +180,6 @@ def postprocess_qa_predictions(
             end_indexes = np.argsort(end_logits)[-1 : -n_best_size - 1 : -1].tolist()
             for start_index in start_indexes:
                 for end_index in end_indexes:
-                   
                     if (
                         start_index >= len(offset_mapping)
                         or end_index >= len(offset_mapping)
@@ -195,7 +195,7 @@ def postprocess_qa_predictions(
                         or end_index - start_index + 1 > max_answer_length
                     ):
                         continue
-                    
+
                     if (
                         token_is_max_context is not None
                         and not token_is_max_context.get(str(start_index), False)
@@ -260,9 +260,7 @@ def postprocess_qa_predictions(
                 - best_non_null_pred["start_logit"]
                 - best_non_null_pred["end_logit"]
             )
-            scores_diff_json[example["id"]] = float(
-                score_diff
-            )  
+            scores_diff_json[example["id"]] = float(score_diff)
             if score_diff > null_score_diff_threshold:
                 all_predictions[example["id"]] = ""
             else:
@@ -272,7 +270,6 @@ def postprocess_qa_predictions(
 
 
 def calculate_metrics(examples, features, predictions):
-
     all_predictions = postprocess_qa_predictions(examples, features, predictions)
     examples_df = examples.to_pandas()
 
@@ -330,23 +327,18 @@ def prepare_train_features(examples):
         padding="max_length",
     )
 
-
     sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
 
     offset_mapping = tokenized_examples.pop("offset_mapping")
-
 
     tokenized_examples["start_positions"] = []
     tokenized_examples["end_positions"] = []
 
     for i, offsets in enumerate(offset_mapping):
-
         input_ids = tokenized_examples["input_ids"][i]
         cls_index = input_ids.index(config["tokenizer"].cls_token_id)
 
-
         sequence_ids = tokenized_examples.sequence_ids(i)
-
 
         sample_index = sample_mapping[i]
         answer = examples["answer"][sample_index]
@@ -355,7 +347,6 @@ def prepare_train_features(examples):
             tokenized_examples["start_positions"].append(cls_index)
             tokenized_examples["end_positions"].append(cls_index)
         else:
-
             start_char = examples["answer_start"][sample_index]
             end_char = examples["answer_end"][sample_index]
 
@@ -386,12 +377,11 @@ def prepare_train_features(examples):
                     token_end_index -= 1
                 tokenized_examples["end_positions"].append(token_end_index + 1)
 
-
     assert not np.isnan(tokenized_examples["start_positions"]).any()
     assert not np.isnan(tokenized_examples["end_positions"]).any()
     assert not np.isnan(tokenized_examples["input_ids"]).any()
     assert not np.isnan(tokenized_examples["attention_mask"]).any()
-    
+
     return tokenized_examples
 
 
