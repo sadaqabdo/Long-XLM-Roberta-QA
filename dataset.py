@@ -44,7 +44,6 @@ def prepare_features(split_data, num_examples, mode="train"):
             )
             .with_format("torch")
         )
-
     else:
         split_dataset = (
             split_data.select(range(int(num_examples)))

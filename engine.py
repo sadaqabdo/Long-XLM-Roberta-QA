@@ -36,7 +36,7 @@ def get_optimizer(model, config):
 
 
 def get_scheduler(split_dataloader, optimizer, config):
-    num_training_steps = math.ceil(len(split_dataloader) / 2) * config["epochs"]
+    num_training_steps = math.ceil(len(split_dataloader) / config['batch_size']) * config["epochs"]
     num_warmup_steps = config["warmup_steps"]
 
     scheduler = get_linear_schedule_with_warmup(
