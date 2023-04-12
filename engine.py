@@ -136,7 +136,7 @@ class Engine:
 
         self.model.eval()
 
-        for batch_idx, batch_data in tqdm(enumerate(valid_dataloader)):
+        for batch_data in tqdm(valid_dataloader):
             batch_data = {k: v.to(self.config["device"]) for k, v in batch_data.items()}
 
             input_ids, attention_mask, targets_start, targets_end = (
@@ -167,7 +167,7 @@ class Engine:
         all_end_logits = []
 
         self.model.eval()
-        for batch_idx, batch_data in tqdm(enumerate(eval_dataloader)):
+        for batch_data in tqdm(eval_dataloader):
             batch_data = {k: v.to(self.config["device"]) for k, v in batch_data.items()}
 
             input_ids, attention_mask = (
@@ -177,6 +177,7 @@ class Engine:
 
             with torch.no_grad():
                 output = self.model(input_ids=input_ids, attention_mask=attention_mask)
+                
             outputs_start, outputs_end = output.start_logits, output.end_logits
             all_start_logits.append(outputs_start[0].cpu().numpy())
             all_end_logits.append(outputs_end[0].cpu().numpy())
