@@ -273,7 +273,7 @@ def postprocess_qa_predictions(
 def calculate_metrics(examples, features, predictions):
     version_2_with_negative = config["squad_v2"]
 
-    squad_metric = load("squad_v2" if version_2_with_negative else "squad_v1")
+    squad_metric = load("squad_v2" if version_2_with_negative else "squad")
 
     all_predictions = postprocess_qa_predictions(
         examples, features, predictions, version_2_with_negative
