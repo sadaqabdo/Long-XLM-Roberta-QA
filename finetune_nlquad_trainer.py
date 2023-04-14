@@ -50,7 +50,7 @@ if __name__ == "__main__":
         train_data, config["num_training_examples"], mode="train"
     )
     valid_dataset = prepare_features(
-        valid_data, config["num_validation_examples"], mode="train"
+        valid_data, config["num_validating_examples"], mode="train"
     )
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
