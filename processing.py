@@ -1,12 +1,13 @@
 import collections
 import re
 import string
-from collections import defaultdict
 
 import nltk
 import numpy as np
+from evaluate import load
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
+from transformers import EvalPrediction
 
 from config import config
 
@@ -270,47 +271,40 @@ def postprocess_qa_predictions(
 
 
 def calculate_metrics(examples, features, predictions):
-    all_predictions = postprocess_qa_predictions(examples, features, predictions)
-    examples_df = examples.to_pandas()
+    version_2_with_negative = config["squad_v2"]
 
-    id_to_data = {}
-    for index, row in examples_df.iterrows():
-        id_to_data[row["id"]] = (row["answer"], row["context"])
+    squad_metric = load("squad_v2" if version_2_with_negative else "squad_v1")
 
-    f1 = defaultdict(float)
-    precisions = defaultdict(float)
-    recalls = defaultdict(float)
-    em = defaultdict(float)
-    JI = defaultdict(float)
+    all_predictions = postprocess_qa_predictions(
+        examples, features, predictions, version_2_with_negative
+    )
 
-    for id, pred_text in tqdm(all_predictions.items()):
-        original_answer, original_context = id_to_data[id]
-        f1[id], precisions[id], recalls[id] = compute_f1(original_answer, pred_text)
-        em[id] = compute_exact(original_answer, pred_text)
-        JI[id] = Jaccard_index(original_context, [original_answer], pred_text)
+    if version_2_with_negative:
+        formatted_predictions = [
+            {"id": k, "prediction_text": v, "no_answer_probability": 0.0}
+            for k, v in all_predictions.items()
+        ]
+    else:
+        formatted_predictions = [
+            {"id": k, "prediction_text": v} for k, v in all_predictions.items()
+        ]
 
-        if JI[id] == 0:
-            JI[id] = Jaccard_index(original_context, [original_answer], pred_text[0:-5])
+    references = [
+        {
+            "id": ex["id"],
+            "answers": {
+                "text": ex["answers.text"],
+                "answer_start": ex["answers.answer_start"],
+            },
+        }
+        for ex in examples
+    ]
+    prediction = EvalPrediction(predictions=formatted_predictions, label_ids=references)
+    squad_res = squad_metric.compute(
+        predictions=prediction.predictions, references=prediction.label_ids
+    )
 
-    f1_np = np.fromiter(f1.values(), dtype=float)
-    recall_np = np.fromiter(recalls.values(), dtype=float)
-    precision_np = np.fromiter(precisions.values(), dtype=float)
-    em_np = np.fromiter(em.values(), dtype=float)
-    JI_np = np.fromiter(JI.values(), dtype=float)
-
-    print("\n mean F1 = ", np.mean(f1_np))
-    print("mean Recall = ", np.mean(recall_np))
-    print("mean Precision = ", np.mean(precision_np))
-    print("mean EM = ", np.mean(em_np))
-    print("mean Area Intersection over Union or Jaccard Index = ", np.mean(JI_np))
-
-    return {
-        "f1": np.mean(f1_np),
-        "recall": np.mean(recall_np),
-        "precision": np.mean(precision_np),
-        "em": np.mean(em_np),
-        "JI": np.mean(JI_np),
-    }
+    return squad_res
 
 
 def prepare_train_features(examples):
@@ -341,14 +335,16 @@ def prepare_train_features(examples):
         sequence_ids = tokenized_examples.sequence_ids(i)
 
         sample_index = sample_mapping[i]
-        answer = examples["answer"][sample_index]
-
-        if len(answer) == 0:
+        answers = {
+            "answer_start": examples["answers.answer_start"][sample_index],
+            "text": examples["answers.text"][sample_index],
+        }
+        if len(answers["answer_start"]) == 0:
             tokenized_examples["start_positions"].append(cls_index)
             tokenized_examples["end_positions"].append(cls_index)
         else:
-            start_char = examples["answer_start"][sample_index]
-            end_char = examples["answer_end"][sample_index]
+            start_char = answers["answer_start"][0]
+            end_char = start_char + len(answers["text"][0])
 
             token_start_index = 0
             while sequence_ids[token_start_index] != (
@@ -377,11 +373,6 @@ def prepare_train_features(examples):
                     token_end_index -= 1
                 tokenized_examples["end_positions"].append(token_end_index + 1)
 
-    assert not np.isnan(tokenized_examples["start_positions"]).any()
-    assert not np.isnan(tokenized_examples["end_positions"]).any()
-    assert not np.isnan(tokenized_examples["input_ids"]).any()
-    assert not np.isnan(tokenized_examples["attention_mask"]).any()
-
     return tokenized_examples
 
 
@@ -393,7 +384,7 @@ def prepare_validation_features(examples):
         examples["context" if config["pad_on_right"] else "question"],
         truncation="only_second" if config["pad_on_right"] else "only_first",
         max_length=config["max_length"],
-        stride=128,
+        stride=config["doc_stride"],
         return_overflowing_tokens=True,
         return_offsets_mapping=True,
         padding="max_length",

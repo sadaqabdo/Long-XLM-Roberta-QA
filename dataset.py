@@ -2,6 +2,7 @@ import json
 
 import datasets
 import pandas as pd
+from numpy import int32
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -17,15 +18,18 @@ def read_nlquad(path):
         for paragraph in data["paragraphs"]:
             for qas in paragraph["qas"]:
                 assert len(qas["answers"]) == 1, "oops"
-
                 for answer in qas["answers"]:
                     single_tuple = {}
                     single_tuple["id"] = qas["id"]
-                    single_tuple["question"] = qas["question"]
+                    single_tuple["title"] = data["title"]
                     single_tuple["context"] = paragraph["context"]
-                    single_tuple["answer_start"] = answer["answer_start"]
-                    single_tuple["answer_end"] = answer["answer_end"]
-                    single_tuple["answer"] = answer["text"]
+                    single_tuple["question"] = qas["question"]
+
+                    single_tuple["answers"] = {}
+                    single_tuple["answers"]["text"] = [answer["text"]]
+                    single_tuple["answers"]["answer_start"] = [
+                        int32(answer["answer_start"])
+                    ]
 
                     new_data.append(single_tuple)
     tmpdf = pd.DataFrame(new_data)

@@ -51,11 +51,11 @@ if __name__ == "__main__":
         train_loss = engine.train(train_loader, epoch)
         end_epoch_time = time.time()
         print(
-            f"Training Epoch {epoch} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
+            f"Training Epoch {epoch+1} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
         )
         valid_loss = engine.validate(valid_loader, epoch)
 
-    print(f"Training took: {str(timedelta(seconds=time.time() - time_start))}")
+    print(f"All Training took: {str(timedelta(seconds=time.time() - time_start))}")
     # 5 here is hardcoded, but it should be the number of the last epoch
     engine.save_checkpoint(train_loss, valid_loss, 5)
 

@@ -27,7 +27,7 @@ def get_optimizer(model, config):
         },
     ]
 
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.AdamW(
         optimizer_grouped_parameters,
         lr=config["learning_rate"],
         eps=config["epsilon"],
@@ -36,7 +36,9 @@ def get_optimizer(model, config):
 
 
 def get_scheduler(split_dataloader, optimizer, config):
-    num_training_steps = math.ceil(len(split_dataloader) / config['batch_size']) * config["epochs"]
+    num_training_steps = (
+        math.ceil(len(split_dataloader) / config["batch_size"]) * config["epochs"]
+    )
     num_warmup_steps = config["warmup_steps"]
 
     scheduler = get_linear_schedule_with_warmup(
@@ -122,12 +124,12 @@ class Engine:
             self.optimizer.zero_grad()
 
             # if loss is nan, stop training, and print the start and end logits
-            # 
             if math.isnan(loss.item()) or torch.isnan(loss).any():
                 print("Loss is nan, stopping training")
                 print("Start Logits: ", output["start_logits"])
                 print("End Logits: ", output["end_logits"])
-                break
+                raise ValueError("Loss is nan")
+
               
             if batch_idx % self.config["print_freq"] == 0:
                 print(
