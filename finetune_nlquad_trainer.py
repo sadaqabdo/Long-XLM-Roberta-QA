@@ -52,6 +52,9 @@ if __name__ == "__main__":
     valid_dataset = prepare_features(
         valid_data, config["num_validating_examples"], mode="train"
     )
+    valid_dataset_for_eval = prepare_features(
+        valid_data, config["num_validating_examples"], mode="eval"
+    )
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
     )
@@ -90,17 +93,36 @@ if __name__ == "__main__":
 
     print("Saving model")
     trainer.save_model(config["output_dir"])
-
+    print("Model Saved")
+    
     print("Evaluating model")
-    trainer.evaluate()
+    evaluation = trainer.evaluate()
+    print(f"Evaluation : {evaluation}")
 
-    print("Predicting model")
+    print("Evaluating model on Valid Dataset")
+    validation_predictions = trainer.predict(valid_dataset_for_eval).predictions
+
+    print("Calculating metrics : \n")
+    valid_time = time.time()
+    validation_set_res = calculate_metrics(valid_data, valid_dataset_for_eval, validation_predictions)
+    print(f"Results on Validation: {validation_set_res}")
+
+
+    print("Evaluating model on Eval Dataset")
     evaluation_predictions = trainer.predict(eval_dataset).predictions
 
     print("Calculating metrics : \n")
     eval_time = time.time()
-    results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
+    evluation_set_res = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
+    print(f"Results on Evaluation : {evluation_set_res}")
 
     print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+    print("Saving results")
     with open("results.json", "w", encoding="utf-8") as f:
-        json.dump(results, f)
+        json.dump({
+            "validation_results": validation_set_res,
+            "evaluation_results": evluation_set_res
+        }, f)
+
+    print("The End.")
+    print("Directed By The QA Company.")
