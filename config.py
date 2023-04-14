@@ -11,6 +11,7 @@ config = {
     "weight_decay": 1e-2,
     "epsilon": 1e-8,
     "warmup_steps": 1000,
+    "squad_v2": False,
     "num_training_examples": 24541,
     "num_validating_examples": 3017,
     "num_evaluation_examples": 3024,
