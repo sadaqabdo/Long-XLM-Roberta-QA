@@ -65,16 +65,16 @@ if __name__ == "__main__":
     nlquad_eval_data = read_nlquad(config["eval_path"])
 
     nlquad_train_dataset = prepare_features(
-        nlquad_train_data, config["num_training_examples"], mode="train"
+        nlquad_train_data, config["nlquad_num_training_examples"], mode="train"
     )
     nlquad_valid_dataset = prepare_features(
-        nlquad_valid_data, config["num_validating_examples"], mode="train"
+        nlquad_valid_data, config["nlquad_num_validating_examples"], mode="train"
     )
     nlquad_valid_dataset_for_eval = prepare_features(
-        nlquad_valid_data, config["num_validating_examples"], mode="eval"
+        nlquad_valid_data, config["nlquad_num_validating_examples"], mode="eval"
     )
     nlquad_eval_dataset = prepare_features(
-        nlquad_eval_data, config["num_evaluation_examples"], mode="eval"
+        nlquad_eval_data, config["nlquad_num_evaluation_examples"], mode="eval"
     )
 
     # Read SQuAD v2 data
@@ -91,13 +91,13 @@ if __name__ == "__main__":
         eval_data = interleave(squad2_valid_data, nlquad_eval_data, config["seed"])
 
         squad2_train_dataset = prepare_features(
-            squad2_train_data, config["num_training_examples"], mode="train"
+            squad2_train_data, config["squadv2_num_training_examples"], mode="train"
         )
         squad2_valid_dataset = prepare_features(
-            squad2_valid_data, config["num_validating_examples"], mode="train"
+            squad2_valid_data, config["squadv2_num_validating_examples"], mode="train"
         )
         squad2_valid_dataset_for_eval = prepare_features(
-            squad2_valid_data, config["num_validating_examples"], mode="eval"
+            squad2_valid_data, config["squadv2_num_validating_examples"], mode="eval"
         )
 
         logger.info("Interleaving NLQuAD and SQuAD v2 data")
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     logger.info("#" * 50)
     logger.info("Saving results")
-    with open("results.json", "w", encoding="utf-8") as f:
+    with open("results_trainer.json", "w", encoding="utf-8") as f:
         json.dump(
             {
                 "validation_results": validation_set_res,

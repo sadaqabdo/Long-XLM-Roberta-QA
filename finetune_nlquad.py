@@ -99,11 +99,14 @@ if __name__ == "__main__":
         squad_valid_data = read_squad2("validation")
         squad_valid_data = cast_dataset_features(squad_valid_data)
         valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
+        num_valid_examples = config["nlquad_num_validating_examples"] + config[
+            "squad_num_validating_examples"]
     else:
         valid_data = nlquad_valid_data
+        num_valid_examples = config["nlquad_num_validating_examples"]
 
     valid_dataset = prepare_features(
-        valid_data, config["num_validating_examples"] * 2, mode="eval"
+        valid_data, num_valid_examples, mode="eval"
     )
 
     logger.info("Evaluating on %s examples from Valid Dataset", len(valid_dataset))
@@ -124,11 +127,14 @@ if __name__ == "__main__":
         squad_valid_data = read_squad2("validation")
         squad_valid_data = cast_dataset_features(squad_valid_data)
         eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
+        num_eval_examples = config["nlquad_num_evaluation_examples"] + config[
+            "squad_num_evaluation_examples"]
     else:
         eval_data = nlquad_eval_data
+        num_eval_examples = config["nlquad_num_evaluation_examples"]
 
     eval_dataset = prepare_features(
-        eval_data, config["num_evaluation_examples"] * 2, mode="eval"
+        eval_data, num_eval_examples, mode="eval"
     )
 
     logger.info("Evaluating on %s examples from Eval Dataset", len(eval_dataset))
@@ -142,7 +148,7 @@ if __name__ == "__main__":
 
     logger.info("#" * 50)
     logger.info("Saving results")
-    with open("results.json", "w", encoding="utf-8") as f:
+    with open("results_no_trainer.json", "w", encoding="utf-8") as f:
         json.dump(
             {
                 "validation_results": validation_set_res,
