@@ -6,15 +6,11 @@ from datetime import timedelta
 
 import numpy as np
 import torch
-from transformers import (
-    Trainer,
-    TrainingArguments,
-    XLMRobertaTokenizerFast,
-    default_data_collator,
-)
+from transformers import (Trainer, TrainingArguments, XLMRobertaTokenizerFast,
+                          default_data_collator)
 
 from config import config
-from dataset import prepare_features, read_nlquad
+from dataset import interleave, prepare_features, read_nlquad, read_squad2
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -42,6 +38,8 @@ if __name__ == "__main__":
 
     config["tokenizer"] = tokenizer
 
+    # Read NLQuAD data
+    print("Reading NLQuAD data")
     train_data = read_nlquad(config["train_path"]).flatten()
     valid_data = read_nlquad(config["valid_path"]).flatten()
     eval_data = read_nlquad(config["eval_path"]).flatten()
@@ -58,6 +56,33 @@ if __name__ == "__main__":
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
     )
+
+    # Read SQuAD v2 data
+    if config["squad_v2"]:
+        print("Reading SQuAD v2 data")
+        squad2_train_data, squad2_valid_data = read_squad2(config)
+        squad2_train_data = squad2_train_data.flatten()
+        squad2_valid_data = squad2_valid_data.flatten()
+
+        squad2_train_dataset = prepare_features(
+            squad2_train_data, config["num_training_examples"], mode="train"
+        )
+        squad2_valid_dataset = prepare_features(
+            squad2_valid_data, config["num_validating_examples"], mode="train"
+        )
+        squad2_valid_dataset_for_eval = prepare_features(
+            squad2_valid_data, config["num_validating_examples"], mode="eval"
+        )
+
+        print("Interleaving NLQuAD and SQuAD v2 data")
+        train_dataset = interleave(squad2_train_dataset, train_dataset, config["seed"])
+        valid_dataset = interleave(squad2_valid_dataset, valid_dataset, config["seed"])
+        valid_dataset_for_eval = interleave(
+            squad2_valid_dataset_for_eval, valid_dataset_for_eval, config["seed"]
+        )
+        eval_dataset = interleave(
+            squad2_valid_dataset_for_eval, eval_dataset, config["seed"]
+        )
 
     training_args = TrainingArguments(
         output_dir=config["output_dir"],
@@ -94,7 +119,7 @@ if __name__ == "__main__":
     print("Saving model")
     trainer.save_model(config["output_dir"])
     print("Model Saved")
-    
+
     print("Evaluating model")
     evaluation = trainer.evaluate()
     print(f"Evaluation : {evaluation}")
@@ -104,25 +129,31 @@ if __name__ == "__main__":
 
     print("Calculating metrics : \n")
     valid_time = time.time()
-    validation_set_res = calculate_metrics(valid_data, valid_dataset_for_eval, validation_predictions)
+    validation_set_res = calculate_metrics(
+        valid_data, valid_dataset_for_eval, validation_predictions
+    )
     print(f"Results on Validation: {validation_set_res}")
-
 
     print("Evaluating model on Eval Dataset")
     evaluation_predictions = trainer.predict(eval_dataset).predictions
 
     print("Calculating metrics : \n")
     eval_time = time.time()
-    evluation_set_res = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
+    evluation_set_res = calculate_metrics(
+        eval_data, eval_dataset, evaluation_predictions
+    )
     print(f"Results on Evaluation : {evluation_set_res}")
 
     print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
     print("Saving results")
     with open("results.json", "w", encoding="utf-8") as f:
-        json.dump({
-            "validation_results": validation_set_res,
-            "evaluation_results": evluation_set_res
-        }, f)
+        json.dump(
+            {
+                "validation_results": validation_set_res,
+                "evaluation_results": evluation_set_res,
+            },
+            f,
+        )
 
     print("The End.")
     print("Directed By The QA Company.")

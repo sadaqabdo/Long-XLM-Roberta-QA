@@ -38,7 +38,9 @@ if __name__ == "__main__":
 
     config["tokenizer"] = tokenizer
 
-    train_loader, valid_loader, eval_loader = make_dataloaders(config)
+    train_loader, valid_loader, valid_loader_for_eval, eval_loader = make_dataloaders(
+        config
+    )
 
     optimizer = get_optimizer(xlm_roberta, config)
     scheduler = get_scheduler(train_loader, optimizer, config)
@@ -54,23 +56,44 @@ if __name__ == "__main__":
             f"Training Epoch {epoch+1} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
         )
         valid_loss = engine.validate(valid_loader, epoch)
+        print(
+            f"Validation Epoch {epoch+1} took: {str(timedelta(seconds=time.time() - end_epoch_time))}"
+        )
 
     print(f"All Training took: {str(timedelta(seconds=time.time() - time_start))}")
-    # 5 here is hardcoded, but it should be the number of the last epoch
-    engine.save_checkpoint(train_loss, valid_loss, 5)
+    engine.save_checkpoint(train_loss, valid_loss, config["epochs"])
 
-    print("Evaluating: \n")
+    print("#" * 50)
+    print("Evaluating model on Valid Dataset")
+    valid_data = read_nlquad(config["valid_path"])
+    valid_dataset = prepare_features(
+        valid_data, config["num_validating_examples"], mode="eval"
+    )
+
+    print(f"Evaluating on {len(valid_dataset)} examples from Valid Dataset")
+    validation_predictions = engine.evaluate(valid_loader_for_eval)
+
+    print("Calculating metrics : \n")
+    valid_time = time.time()
+    valid_results = calculate_metrics(valid_data, valid_dataset, validation_predictions)
+    print(f"Validation took: {str(timedelta(seconds=time.time() - valid_time))}")
+
+    print("#" * 50)
+    print("Evaluating model on Eval Dataset")
     eval_data = read_nlquad(config["eval_path"])
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"], mode="eval"
     )
 
-    print(f"Evaluating on {len(eval_dataset)} examples")
+    print(f"Evaluating on {len(eval_dataset)} examples from Eval Dataset")
     evaluation_predictions = engine.evaluate(eval_loader)
 
     print("Calculating metrics : \n")
     eval_time = time.time()
-    results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
+    eval_results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
     print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+
+    print("#" * 50)
+    print("Saving results to results.json")
     with open("results.json", "w", encoding="utf-8") as f:
-        json.dump(results, f)
+        json.dump({"valid_results": valid_results, "eval_results": eval_results}, f)
