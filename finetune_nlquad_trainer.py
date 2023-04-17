@@ -151,6 +151,7 @@ if __name__ == "__main__":
         do_train=True,
         do_eval=True,
         do_predict=True,
+        logging_nan_inf_filter=False
     )
 
     trainer = Trainer(
