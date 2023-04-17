@@ -1,13 +1,20 @@
 import json
 import os
 import random
+import logging, sys
 import time
 from datetime import timedelta
 
 import numpy as np
 import torch
-from transformers import (Trainer, TrainingArguments, XLMRobertaTokenizerFast,
-                          default_data_collator)
+import datasets
+import transformers
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    XLMRobertaTokenizerFast,
+    default_data_collator,
+)
 
 from config import config
 from dataset import interleave, prepare_features, read_nlquad, read_squad2
@@ -16,6 +23,22 @@ from processing import calculate_metrics
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+# Setup logging
+logger = logging.getLogger(__name__)
+
+# Setup logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+
+datasets.utils.logging.set_verbosity_warning()
+transformers.utils.logging.set_verbosity_info()
+datasets.utils.logging.set_verbosity_error()
+transformers.utils.logging.set_verbosity_error()
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
@@ -39,10 +62,10 @@ if __name__ == "__main__":
     config["tokenizer"] = tokenizer
 
     # Read NLQuAD data
-    print("Reading NLQuAD data")
-    train_data = read_nlquad(config["train_path"]).flatten()
-    valid_data = read_nlquad(config["valid_path"]).flatten()
-    eval_data = read_nlquad(config["eval_path"]).flatten()
+    logger.info("Reading NLQuAD data")
+    train_data = read_nlquad(config["train_path"])
+    valid_data = read_nlquad(config["valid_path"])
+    eval_data = read_nlquad(config["eval_path"])
 
     train_dataset = prepare_features(
         train_data, config["num_training_examples"], mode="train"
@@ -59,10 +82,12 @@ if __name__ == "__main__":
 
     # Read SQuAD v2 data
     if config["squad_v2"]:
-        print("Reading SQuAD v2 data")
-        squad2_train_data, squad2_valid_data = read_squad2(config)
-        squad2_train_data = squad2_train_data.flatten()
-        squad2_valid_data = squad2_valid_data.flatten()
+        logger.info("Reading SQuAD v2 data")
+        squad2_train_data = read_squad2("train")
+        squad2_valid_data = read_squad2("valid")
+
+        valid_data = interleave(squad2_valid_data, valid_data, config["seed"])
+        eval_data = interleave(squad2_valid_data, eval_data, config["seed"])
 
         squad2_train_dataset = prepare_features(
             squad2_train_data, config["num_training_examples"], mode="train"
@@ -74,7 +99,7 @@ if __name__ == "__main__":
             squad2_valid_data, config["num_validating_examples"], mode="eval"
         )
 
-        print("Interleaving NLQuAD and SQuAD v2 data")
+        logger.info("Interleaving NLQuAD and SQuAD v2 data")
         train_dataset = interleave(squad2_train_dataset, train_dataset, config["seed"])
         valid_dataset = interleave(squad2_valid_dataset, valid_dataset, config["seed"])
         valid_dataset_for_eval = interleave(
@@ -99,6 +124,7 @@ if __name__ == "__main__":
         max_grad_norm=config["max_grad_norm"],
         seed=config["seed"],
         metric_for_best_model="f1",
+        logging_dir=config["output_dir"],
         do_train=True,
         do_eval=True,
         do_predict=True,
@@ -113,39 +139,41 @@ if __name__ == "__main__":
         tokenizer=config["tokenizer"],
     )
 
-    print("Training model")
-    trainer.train()
+    logger.info("Training model")
+    train_result = trainer.train()
+    trainer.log_metrics("train", train_result.metrics)
+    trainer.save_metrics("train", train_result.metrics)
 
-    print("Saving model")
+    logger.info("Saving model")
     trainer.save_model(config["output_dir"])
-    print("Model Saved")
+    logger.info("Model Saved")
 
-    print("Evaluating model")
+    logger.info("Evaluating model")
     evaluation = trainer.evaluate()
-    print(f"Evaluation : {evaluation}")
+    logger.info(f"Evaluation : {evaluation}")
 
-    print("Evaluating model on Valid Dataset")
+    logger.info("Evaluating model on Valid Dataset")
     validation_predictions = trainer.predict(valid_dataset_for_eval).predictions
 
-    print("Calculating metrics : \n")
+    logger.info("Calculating metrics : \n")
     valid_time = time.time()
     validation_set_res = calculate_metrics(
         valid_data, valid_dataset_for_eval, validation_predictions
     )
-    print(f"Results on Validation: {validation_set_res}")
+    logger.info(f"Results on Validation: {validation_set_res}")
 
-    print("Evaluating model on Eval Dataset")
+    logger.info("Evaluating model on Eval Dataset")
     evaluation_predictions = trainer.predict(eval_dataset).predictions
 
-    print("Calculating metrics : \n")
+    logger.info("Calculating metrics : \n")
     eval_time = time.time()
     evluation_set_res = calculate_metrics(
         eval_data, eval_dataset, evaluation_predictions
     )
-    print(f"Results on Evaluation : {evluation_set_res}")
+    logger.info(f"Results on Evaluation : {evluation_set_res}")
 
-    print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
-    print("Saving results")
+    logger.info(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+    logger.info("Saving results")
     with open("results.json", "w", encoding="utf-8") as f:
         json.dump(
             {
@@ -155,5 +183,5 @@ if __name__ == "__main__":
             f,
         )
 
-    print("The End.")
-    print("Directed By The QA Company.")
+    logger.info("The End.")
+    logger.info("Directed By The QA Company.")

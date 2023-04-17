@@ -1,21 +1,46 @@
 import json
+import logging
 import os
 import random
+import sys
 import time
 from datetime import timedelta
 
+import datasets
 import numpy as np
 import torch
+import transformers
 from transformers import XLMRobertaTokenizerFast
 
 from config import config
-from dataset import make_dataloaders, prepare_features, read_nlquad
+from dataset import (
+    interleave,
+    make_dataloaders,
+    prepare_features,
+    read_nlquad,
+    read_squad2,
+)
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+logger = logging.getLogger(__name__)
+
+# Setup logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+
+logger.setLevel(logging.INFO)
+datasets.utils.logging.set_verbosity_warning()
+transformers.utils.logging.set_verbosity_info()
+
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
@@ -52,48 +77,56 @@ if __name__ == "__main__":
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         end_epoch_time = time.time()
-        print(
+        logger.info(
             f"Training Epoch {epoch+1} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
         )
         valid_loss = engine.validate(valid_loader, epoch)
-        print(
+        logger.info(
             f"Validation Epoch {epoch+1} took: {str(timedelta(seconds=time.time() - end_epoch_time))}"
         )
 
-    print(f"All Training took: {str(timedelta(seconds=time.time() - time_start))}")
+    logger.info(f"All Training took: {str(timedelta(seconds=time.time() - time_start))}")
     engine.save_checkpoint(train_loss, valid_loss, config["epochs"])
 
-    print("#" * 50)
-    print("Evaluating model on Valid Dataset")
-    valid_data = read_nlquad(config["valid_path"])
+    logger.info("#" * 50)
+    logger.info("Evaluating model on Valid Dataset")
+
+    nlquad_valid_data = read_nlquad(config["valid_path"])
+    squad_valid_data = read_squad2("valid")
+
+    valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
     valid_dataset = prepare_features(
-        valid_data, config["num_validating_examples"], mode="eval"
+        valid_data, config["num_validating_examples"] * 2, mode="eval"
     )
 
-    print(f"Evaluating on {len(valid_dataset)} examples from Valid Dataset")
+    logger.info(f"Evaluating on {len(valid_dataset)} examples from Valid Dataset")
     validation_predictions = engine.evaluate(valid_loader_for_eval)
 
-    print("Calculating metrics : \n")
+    logger.info("Calculating metrics for Validation Set : \n")
     valid_time = time.time()
     valid_results = calculate_metrics(valid_data, valid_dataset, validation_predictions)
-    print(f"Validation took: {str(timedelta(seconds=time.time() - valid_time))}")
+    logger.info(f"Results on Validation Set: {valid_results}")
+    logger.info(f"Validation took: {str(timedelta(seconds=time.time() - valid_time))}")
 
-    print("#" * 50)
-    print("Evaluating model on Eval Dataset")
-    eval_data = read_nlquad(config["eval_path"])
+    logger.info("#" * 50)
+    logger.info("Evaluating model on Eval Dataset")
+    nlquad_eval_data = read_nlquad(config["eval_path"])
+    eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
+
     eval_dataset = prepare_features(
-        eval_data, config["num_evaluation_examples"], mode="eval"
+        eval_data, config["num_evaluation_examples"] * 2, mode="eval"
     )
 
-    print(f"Evaluating on {len(eval_dataset)} examples from Eval Dataset")
+    logger.info(f"Evaluating on {len(eval_dataset)} examples from Eval Dataset")
     evaluation_predictions = engine.evaluate(eval_loader)
 
-    print("Calculating metrics : \n")
+    logger.info("Calculating metrics for Evaluation Set: \n")
     eval_time = time.time()
     eval_results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-    print(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+    logger.info(f"Results on Evaluation Set: {eval_results}")
+    logger.info(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
 
-    print("#" * 50)
-    print("Saving results to results.json")
+    logger.info("#" * 50)
+    logger.info("Saving results to results.json")
     with open("results.json", "w", encoding="utf-8") as f:
         json.dump({"valid_results": valid_results, "eval_results": eval_results}, f)

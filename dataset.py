@@ -2,7 +2,7 @@ import json
 
 import datasets
 import pandas as pd
-from datasets import interleave_datasets, load_dataset
+from datasets import Sequence, Value, interleave_datasets, load_dataset
 from numpy import int32
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -39,6 +39,9 @@ def read_nlquad(path):
 
 
 def prepare_features(split_data, num_examples, mode="train"):
+    if num_examples == -1:
+        num_examples = len(split_data)
+
     if mode == "train":
         split_dataset = (
             split_data.select(range(int(num_examples)))
@@ -79,9 +82,9 @@ def set_loader(split, batch_size, columns_to_remove=None):
 
 
 def make_dataloaders(config):
-    train_data = read_nlquad(config["train_path"]).flatten()
-    valid_data = read_nlquad(config["valid_path"]).flatten()
-    eval_data = read_nlquad(config["eval_path"]).flatten()
+    train_data = read_nlquad(config["train_path"])
+    valid_data = read_nlquad(config["valid_path"])
+    eval_data = read_nlquad(config["eval_path"])
 
     train_dataset = prepare_features(
         train_data, config["num_training_examples"], mode="train"
@@ -97,9 +100,8 @@ def make_dataloaders(config):
     )
 
     if config["squad_v2"]:
-        squad2_train_data, squad2_valid_data = read_squad2(config)
-        squad2_train_data = squad2_train_data.flatten()
-        squad2_valid_data = squad2_valid_data.flatten()
+        squad2_train_data = read_squad2("train")
+        squad2_valid_data = read_squad2("valid")
 
         squad2_train_dataset = prepare_features(
             squad2_train_data, config["num_training_examples"], mode="train"
@@ -111,12 +113,14 @@ def make_dataloaders(config):
             squad2_valid_data, config["num_validating_examples"], mode="eval"
         )
 
-        train_dataset = interleave(squad2_train_dataset, train_dataset, config)
-        valid_dataset = interleave(squad2_valid_dataset, valid_dataset, config)
+        train_dataset = interleave(squad2_train_dataset, train_dataset, config["seed"])
+        valid_dataset = interleave(squad2_valid_dataset, valid_dataset, config["seed"])
         valid_dataset_for_eval = interleave(
-            squad2_valid_dataset_for_eval, valid_dataset_for_eval, config
+            squad2_valid_dataset_for_eval, valid_dataset_for_eval, config["seed"]
         )
-        eval_dataset = interleave(squad2_valid_dataset_for_eval, eval_dataset, config)
+        eval_dataset = interleave(
+            squad2_valid_dataset_for_eval, eval_dataset, config["seed"]
+        )
 
     train_loader = set_loader(train_dataset, config["batch_size"])
     valid_loader = set_loader(valid_dataset, config["batch_size"])
@@ -134,15 +138,21 @@ def make_dataloaders(config):
     return train_loader, valid_loader, valid_loader_for_eval, eval_loader
 
 
-def read_squad2(config):
-    squad2_train_data = load_dataset("squad_v2", split="train")
-    squad2_valid_data = load_dataset("squad_v2", split="validation")
+def read_squad2(split):
+    squad2_split = load_dataset("squad_v2", split=split)
+    return squad2_split
 
-    squad2_train_data = squad2_train_data.select(range(config["num_training_examples"]))
-    squad2_valid_data = squad2_valid_data.select(
-        range(config["num_validating_examples"])
-    )
-    return squad2_train_data, squad2_valid_data
+
+def cast_features(data):
+    new_features = data.features.copy()
+    new_features["answers"] = {
+        "answer_start": Sequence(
+            feature=Value(dtype="int32", id=None), length=-1, id=None
+        ),
+        "text": Sequence(feature=Value(dtype="string", id=None), length=-1, id=None),
+    }
+    data = data.cast(new_features)
+    return data
 
 
 def interleave(dataset1, dataset2, seed):

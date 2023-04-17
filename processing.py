@@ -1,17 +1,11 @@
 import collections
-import re
-import string
 
-import nltk
 import numpy as np
 from evaluate import load
-from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from transformers import EvalPrediction
 
 from config import config
-
-nltk.download("punkt")
 
 
 def postprocess_qa_predictions(
@@ -182,16 +176,7 @@ def calculate_metrics(examples, features, predictions):
             {"id": k, "prediction_text": v} for k, v in all_predictions.items()
         ]
 
-    references = [
-        {
-            "id": ex["id"],
-            "answers": {
-                "text": ex["answers.text"],
-                "answer_start": ex["answers.answer_start"],
-            },
-        }
-        for ex in examples
-    ]
+    references = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
     prediction = EvalPrediction(predictions=formatted_predictions, label_ids=references)
     squad_res = squad_metric.compute(
         predictions=prediction.predictions, references=prediction.label_ids
@@ -228,10 +213,7 @@ def prepare_train_features(examples):
         sequence_ids = tokenized_examples.sequence_ids(i)
 
         sample_index = sample_mapping[i]
-        answers = {
-            "answer_start": examples["answers.answer_start"][sample_index],
-            "text": examples["answers.text"][sample_index],
-        }
+        answers = examples["answers"][sample_index]
         if len(answers["answer_start"]) == 0:
             tokenized_examples["start_positions"].append(cls_index)
             tokenized_examples["end_positions"].append(cls_index)
