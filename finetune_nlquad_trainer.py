@@ -148,10 +148,11 @@ if __name__ == "__main__":
         seed=config["seed"],
         metric_for_best_model="f1",
         logging_dir=config["output_dir"],
+        save_strategy='no',
         do_train=True,
         do_eval=True,
         do_predict=True,
-        logging_nan_inf_filter=False
+        logging_nan_inf_filter=False,
     )
 
     trainer = Trainer(
