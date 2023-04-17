@@ -13,14 +13,8 @@ import transformers
 from transformers import XLMRobertaTokenizerFast
 
 from config import config
-from dataset import (
-    interleave,
-    make_dataloaders,
-    prepare_features,
-    read_nlquad,
-    read_squad2,
-    cast_dataset_features
-)
+from dataset import (cast_dataset_features, interleave, make_dataloaders,
+                     prepare_features, read_nlquad, read_squad2)
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
@@ -78,13 +72,22 @@ if __name__ == "__main__":
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         end_epoch_time = time.time()
-        logger.info("Training Epoch %s took: %s", epoch+1, str(timedelta(seconds=end_epoch_time - time_start)))
+        logger.info(
+            "Training Epoch %s took: %s",
+            epoch + 1,
+            str(timedelta(seconds=end_epoch_time - time_start)),
+        )
 
         valid_loss = engine.validate(valid_loader, epoch)
-        logger.info("Validating Epoch %s took: %s", epoch+1, str(timedelta(seconds=end_epoch_time - time_start)))
+        logger.info(
+            "Validating Epoch %s took: %s",
+            epoch + 1,
+            str(timedelta(seconds=end_epoch_time - time_start)),
+        )
 
-
-    logger.info("All Training took: %s", str(timedelta(seconds=time.time() - time_start)))
+    logger.info(
+        "All Training took: %s", str(timedelta(seconds=time.time() - time_start))
+    )
     engine.save_checkpoint(train_loss, valid_loss, config["epochs"])
 
     logger.info("#" * 50)
@@ -107,8 +110,10 @@ if __name__ == "__main__":
     validation_predictions = engine.evaluate(valid_loader_for_eval)
 
     logger.info("Calculating metrics for Validation Set : \n")
-    valid_results = calculate_metrics(valid_data, valid_dataset, validation_predictions)
-    logger.info("Results on Validation Set: %s", valid_results)
+    validation_set_res = calculate_metrics(
+        valid_data, valid_dataset, validation_predictions
+    )
+    logger.info("Results on Validation Set: %s", validation_set_res)
 
     logger.info("#" * 50)
     logger.info("Evaluating model on Eval Dataset")
@@ -121,7 +126,7 @@ if __name__ == "__main__":
         eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
     else:
         eval_data = nlquad_eval_data
-    
+
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"] * 2, mode="eval"
     )
@@ -130,10 +135,21 @@ if __name__ == "__main__":
     evaluation_predictions = engine.evaluate(eval_loader)
 
     logger.info("Calculating metrics for Evaluation Set: \n")
-    eval_results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-    logger.info("Results on Evaluation Set: %s", eval_results)
+    evluation_set_res = calculate_metrics(
+        eval_data, eval_dataset, evaluation_predictions
+    )
+    logger.info("Results on Evaluation Set: %s", evluation_set_res)
 
     logger.info("#" * 50)
-    logger.info("Saving results to results.json")
+    logger.info("Saving results")
     with open("results.json", "w", encoding="utf-8") as f:
-        json.dump({"valid_results": valid_results, "eval_results": eval_results}, f)
+        json.dump(
+            {
+                "validation_results": validation_set_res,
+                "evaluation_results": evluation_set_res,
+            },
+            f,
+        )
+
+    logger.info("The End.")
+    logger.info("Directed By The QA Company.")

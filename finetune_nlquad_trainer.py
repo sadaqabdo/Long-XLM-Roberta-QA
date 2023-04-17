@@ -1,23 +1,20 @@
 import json
+import logging
 import os
 import random
-import logging, sys
+import sys
 import time
-from datetime import timedelta
 
+import datasets
 import numpy as np
 import torch
-import datasets
 import transformers
-from transformers import (
-    Trainer,
-    TrainingArguments,
-    XLMRobertaTokenizerFast,
-    default_data_collator,
-)
+from transformers import (Trainer, TrainingArguments, XLMRobertaTokenizerFast,
+                          default_data_collator)
 
 from config import config
-from dataset import interleave, prepare_features, read_nlquad, read_squad2, cast_dataset_features
+from dataset import (cast_dataset_features, interleave, prepare_features,
+                     read_nlquad, read_squad2)
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -63,21 +60,21 @@ if __name__ == "__main__":
 
     # Read NLQuAD data
     logger.info("Reading NLQuAD data")
-    train_data = read_nlquad(config["train_path"])
-    valid_data = read_nlquad(config["valid_path"])
-    eval_data = read_nlquad(config["eval_path"])
+    nlquad_train_data = read_nlquad(config["train_path"])
+    nlquad_valid_data = read_nlquad(config["valid_path"])
+    nlquad_eval_data = read_nlquad(config["eval_path"])
 
-    train_dataset = prepare_features(
-        train_data, config["num_training_examples"], mode="train"
+    nlquad_train_dataset = prepare_features(
+        nlquad_train_data, config["num_training_examples"], mode="train"
     )
-    valid_dataset = prepare_features(
-        valid_data, config["num_validating_examples"], mode="train"
+    nlquad_valid_dataset = prepare_features(
+        nlquad_valid_data, config["num_validating_examples"], mode="train"
     )
-    valid_dataset_for_eval = prepare_features(
-        valid_data, config["num_validating_examples"], mode="eval"
+    nlquad_valid_dataset_for_eval = prepare_features(
+        nlquad_valid_data, config["num_validating_examples"], mode="eval"
     )
-    eval_dataset = prepare_features(
-        eval_data, config["num_evaluation_examples"], mode="eval"
+    nlquad_eval_dataset = prepare_features(
+        nlquad_eval_data, config["num_evaluation_examples"], mode="eval"
     )
 
     # Read SQuAD v2 data
@@ -89,8 +86,9 @@ if __name__ == "__main__":
         squad2_train_data = cast_dataset_features(squad2_train_data)
         squad2_valid_data = cast_dataset_features(squad2_valid_data)
 
-        valid_data = interleave(squad2_valid_data, valid_data, config["seed"])
-        eval_data = interleave(squad2_valid_data, eval_data, config["seed"])
+        train_data = interleave(squad2_train_data, nlquad_train_data, config["seed"])
+        valid_data = interleave(squad2_valid_data, nlquad_valid_data, config["seed"])
+        eval_data = interleave(squad2_valid_data, nlquad_eval_data, config["seed"])
 
         squad2_train_dataset = prepare_features(
             squad2_train_data, config["num_training_examples"], mode="train"
@@ -103,14 +101,27 @@ if __name__ == "__main__":
         )
 
         logger.info("Interleaving NLQuAD and SQuAD v2 data")
-        train_dataset = interleave(squad2_train_dataset, train_dataset, config["seed"])
-        valid_dataset = interleave(squad2_valid_dataset, valid_dataset, config["seed"])
+        train_dataset = interleave(
+            squad2_train_dataset, nlquad_train_dataset, config["seed"]
+        )
+        valid_dataset = interleave(
+            squad2_valid_dataset, nlquad_valid_dataset, config["seed"]
+        )
         valid_dataset_for_eval = interleave(
-            squad2_valid_dataset_for_eval, valid_dataset_for_eval, config["seed"]
+            squad2_valid_dataset_for_eval, nlquad_valid_dataset_for_eval, config["seed"]
         )
         eval_dataset = interleave(
-            squad2_valid_dataset_for_eval, eval_dataset, config["seed"]
+            squad2_valid_dataset_for_eval, nlquad_eval_dataset, config["seed"]
         )
+    else:
+        train_data = nlquad_train_data
+        valid_data = nlquad_valid_data
+        eval_data = nlquad_eval_data
+
+        train_dataset = nlquad_train_dataset
+        valid_dataset = nlquad_valid_dataset
+        valid_dataset_for_eval = nlquad_valid_dataset_for_eval
+        eval_dataset = nlquad_eval_dataset
 
     training_args = TrainingArguments(
         output_dir=config["output_dir"],
@@ -153,7 +164,7 @@ if __name__ == "__main__":
 
     logger.info("Evaluating model")
     evaluation = trainer.evaluate()
-    logger.info(f"Evaluation : {evaluation}")
+    logger.info("Evaluation %s", evaluation)
 
     logger.info("Evaluating model on Valid Dataset")
     validation_predictions = trainer.predict(valid_dataset_for_eval).predictions
@@ -163,19 +174,19 @@ if __name__ == "__main__":
     validation_set_res = calculate_metrics(
         valid_data, valid_dataset_for_eval, validation_predictions
     )
-    logger.info(f"Results on Validation: {validation_set_res}")
+    logger.info("Results on Validation Set: %s", validation_set_res)
 
     logger.info("Evaluating model on Eval Dataset")
     evaluation_predictions = trainer.predict(eval_dataset).predictions
 
     logger.info("Calculating metrics : \n")
-    eval_time = time.time()
+
     evluation_set_res = calculate_metrics(
         eval_data, eval_dataset, evaluation_predictions
     )
-    logger.info(f"Results on Evaluation : {evluation_set_res}")
+    logger.info("Results on Evaluation Set: %s", evluation_set_res)
 
-    logger.info(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+    logger.info("#" * 50)
     logger.info("Saving results")
     with open("results.json", "w", encoding="utf-8") as f:
         json.dump(

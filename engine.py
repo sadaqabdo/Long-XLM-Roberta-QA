@@ -67,7 +67,7 @@ class Engine:
     def save_checkpoint(self, train_loss, valid_loss, epoch):
         if not os.path.exists(self.config["output_dir"]):
             os.makedirs(self.config["output_dir"])
-    
+
         self.model.eval()
         torch.save(
             {
