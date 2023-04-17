@@ -143,7 +143,7 @@ def read_squad2(split):
     return squad2_split
 
 
-def cast_features(data):
+def cast_dataset_features(data):
     new_features = data.features.copy()
     new_features["answers"] = {
         "answer_start": Sequence(

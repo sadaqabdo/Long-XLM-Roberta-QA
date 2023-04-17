@@ -19,6 +19,7 @@ from dataset import (
     prepare_features,
     read_nlquad,
     read_squad2,
+    cast_dataset_features
 )
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
@@ -90,9 +91,14 @@ if __name__ == "__main__":
     logger.info("Evaluating model on Valid Dataset")
 
     nlquad_valid_data = read_nlquad(config["valid_path"])
-    squad_valid_data = read_squad2("validation")
 
-    valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
+    if config["squad_v2"]:
+        squad_valid_data = read_squad2("validation")
+        squad_valid_data = cast_dataset_features(squad_valid_data)
+        valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
+    else:
+        valid_data = nlquad_valid_data
+
     valid_dataset = prepare_features(
         valid_data, config["num_validating_examples"] * 2, mode="eval"
     )
@@ -106,9 +112,16 @@ if __name__ == "__main__":
 
     logger.info("#" * 50)
     logger.info("Evaluating model on Eval Dataset")
-    nlquad_eval_data = read_nlquad(config["eval_path"])
-    eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
 
+    nlquad_eval_data = read_nlquad(config["eval_path"])
+
+    if config["squad_v2"]:
+        squad_valid_data = read_squad2("validation")
+        squad_valid_data = cast_dataset_features(squad_valid_data)
+        eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
+    else:
+        eval_data = nlquad_eval_data
+    
     eval_dataset = prepare_features(
         eval_data, config["num_evaluation_examples"] * 2, mode="eval"
     )

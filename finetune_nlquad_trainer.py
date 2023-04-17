@@ -17,7 +17,7 @@ from transformers import (
 )
 
 from config import config
-from dataset import interleave, prepare_features, read_nlquad, read_squad2
+from dataset import interleave, prepare_features, read_nlquad, read_squad2, cast_dataset_features
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -85,6 +85,9 @@ if __name__ == "__main__":
         logger.info("Reading SQuAD v2 data")
         squad2_train_data = read_squad2("train")
         squad2_valid_data = read_squad2("validation")
+
+        squad2_train_data = cast_dataset_features(squad2_train_data)
+        squad2_valid_data = cast_dataset_features(squad2_valid_data)
 
         valid_data = interleave(squad2_valid_data, valid_data, config["seed"])
         eval_data = interleave(squad2_valid_data, eval_data, config["seed"])
