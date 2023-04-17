@@ -87,16 +87,16 @@ def make_dataloaders(config):
     eval_data = read_nlquad(config["eval_path"])
 
     train_dataset = prepare_features(
-        train_data, config["num_training_examples"], mode="train"
+        train_data, config["nlquad_num_training_examples"], mode="train"
     )
     valid_dataset = prepare_features(
-        valid_data, config["num_validating_examples"], mode="train"
+        valid_data, config["nlquad_num_validating_examples"], mode="train"
     )
     valid_dataset_for_eval = prepare_features(
-        valid_data, config["num_validating_examples"], mode="eval"
+        valid_data, config["nlquad_num_validating_examples"], mode="eval"
     )
     eval_dataset = prepare_features(
-        eval_data, config["num_evaluation_examples"], mode="eval"
+        eval_data, config["nlquad_num_evaluation_examples"], mode="eval"
     )
 
     if config["squad_v2"]:
@@ -104,13 +104,13 @@ def make_dataloaders(config):
         squad2_valid_data = read_squad2("validation")
 
         squad2_train_dataset = prepare_features(
-            squad2_train_data, config["num_training_examples"], mode="train"
+            squad2_train_data, config["squadv2_num_training_examples"], mode="train"
         )
         squad2_valid_dataset = prepare_features(
-            squad2_valid_data, config["num_validating_examples"], mode="train"
+            squad2_valid_data, config["squadv2_num_validating_examples"], mode="train"
         )
         squad2_valid_dataset_for_eval = prepare_features(
-            squad2_valid_data, config["num_validating_examples"], mode="eval"
+            squad2_valid_data, config["squadv2_num_validating_examples"], mode="eval"
         )
 
         train_dataset = interleave(squad2_train_dataset, train_dataset, config["seed"])

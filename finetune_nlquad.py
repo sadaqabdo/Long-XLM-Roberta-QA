@@ -13,8 +13,14 @@ import transformers
 from transformers import XLMRobertaTokenizerFast
 
 from config import config
-from dataset import (cast_dataset_features, interleave, make_dataloaders,
-                     prepare_features, read_nlquad, read_squad2)
+from dataset import (
+    cast_dataset_features,
+    interleave,
+    make_dataloaders,
+    prepare_features,
+    read_nlquad,
+    read_squad2,
+)
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
@@ -99,15 +105,15 @@ if __name__ == "__main__":
         squad_valid_data = read_squad2("validation")
         squad_valid_data = cast_dataset_features(squad_valid_data)
         valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
-        num_valid_examples = config["nlquad_num_validating_examples"] + config[
-            "squad_num_validating_examples"]
+        num_valid_examples = (
+            config["nlquad_num_validating_examples"]
+            + config["squad_num_validating_examples"]
+        )
     else:
         valid_data = nlquad_valid_data
         num_valid_examples = config["nlquad_num_validating_examples"]
 
-    valid_dataset = prepare_features(
-        valid_data, num_valid_examples, mode="eval"
-    )
+    valid_dataset = prepare_features(valid_data, num_valid_examples, mode="eval")
 
     logger.info("Evaluating on %s examples from Valid Dataset", len(valid_dataset))
     validation_predictions = engine.evaluate(valid_loader_for_eval)
@@ -127,15 +133,15 @@ if __name__ == "__main__":
         squad_valid_data = read_squad2("validation")
         squad_valid_data = cast_dataset_features(squad_valid_data)
         eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
-        num_eval_examples = config["nlquad_num_evaluation_examples"] + config[
-            "squad_num_evaluation_examples"]
+        num_eval_examples = (
+            config["nlquad_num_evaluation_examples"]
+            + config["squad_num_evaluation_examples"]
+        )
     else:
         eval_data = nlquad_eval_data
         num_eval_examples = config["nlquad_num_evaluation_examples"]
 
-    eval_dataset = prepare_features(
-        eval_data, num_eval_examples, mode="eval"
-    )
+    eval_dataset = prepare_features(eval_data, num_eval_examples, mode="eval")
 
     logger.info("Evaluating on %s examples from Eval Dataset", len(eval_dataset))
     evaluation_predictions = engine.evaluate(eval_loader)
