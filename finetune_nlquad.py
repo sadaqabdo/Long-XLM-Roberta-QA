@@ -77,36 +77,32 @@ if __name__ == "__main__":
     for epoch in range(config["epochs"]):
         train_loss = engine.train(train_loader, epoch)
         end_epoch_time = time.time()
-        logger.info(
-            f"Training Epoch {epoch+1} took: {str(timedelta(seconds=end_epoch_time - time_start))}"
-        )
-        valid_loss = engine.validate(valid_loader, epoch)
-        logger.info(
-            f"Validation Epoch {epoch+1} took: {str(timedelta(seconds=time.time() - end_epoch_time))}"
-        )
+        logger.info("Training Epoch %s took: %s", epoch+1, str(timedelta(seconds=end_epoch_time - time_start)))
 
-    logger.info(f"All Training took: {str(timedelta(seconds=time.time() - time_start))}")
+        valid_loss = engine.validate(valid_loader, epoch)
+        logger.info("Validating Epoch %s took: %s", epoch+1, str(timedelta(seconds=end_epoch_time - time_start)))
+
+
+    logger.info("All Training took: %s", str(timedelta(seconds=time.time() - time_start)))
     engine.save_checkpoint(train_loss, valid_loss, config["epochs"])
 
     logger.info("#" * 50)
     logger.info("Evaluating model on Valid Dataset")
 
     nlquad_valid_data = read_nlquad(config["valid_path"])
-    squad_valid_data = read_squad2("valid")
+    squad_valid_data = read_squad2("validation")
 
     valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
     valid_dataset = prepare_features(
         valid_data, config["num_validating_examples"] * 2, mode="eval"
     )
 
-    logger.info(f"Evaluating on {len(valid_dataset)} examples from Valid Dataset")
+    logger.info("Evaluating on %s examples from Valid Dataset", len(valid_dataset))
     validation_predictions = engine.evaluate(valid_loader_for_eval)
 
     logger.info("Calculating metrics for Validation Set : \n")
-    valid_time = time.time()
     valid_results = calculate_metrics(valid_data, valid_dataset, validation_predictions)
-    logger.info(f"Results on Validation Set: {valid_results}")
-    logger.info(f"Validation took: {str(timedelta(seconds=time.time() - valid_time))}")
+    logger.info("Results on Validation Set: %s", valid_results)
 
     logger.info("#" * 50)
     logger.info("Evaluating model on Eval Dataset")
@@ -117,14 +113,12 @@ if __name__ == "__main__":
         eval_data, config["num_evaluation_examples"] * 2, mode="eval"
     )
 
-    logger.info(f"Evaluating on {len(eval_dataset)} examples from Eval Dataset")
+    logger.info("Evaluating on %s examples from Eval Dataset", len(eval_dataset))
     evaluation_predictions = engine.evaluate(eval_loader)
 
     logger.info("Calculating metrics for Evaluation Set: \n")
-    eval_time = time.time()
     eval_results = calculate_metrics(eval_data, eval_dataset, evaluation_predictions)
-    logger.info(f"Results on Evaluation Set: {eval_results}")
-    logger.info(f"Evaluation took: {str(timedelta(seconds=time.time() - eval_time))}")
+    logger.info("Results on Evaluation Set: %s", eval_results)
 
     logger.info("#" * 50)
     logger.info("Saving results to results.json")

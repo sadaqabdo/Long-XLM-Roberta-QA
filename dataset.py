@@ -39,7 +39,7 @@ def read_nlquad(path):
 
 
 def prepare_features(split_data, num_examples, mode="train"):
-    if num_examples == -1:
+    if num_examples < 0:
         num_examples = len(split_data)
 
     if mode == "train":
@@ -101,7 +101,7 @@ def make_dataloaders(config):
 
     if config["squad_v2"]:
         squad2_train_data = read_squad2("train")
-        squad2_valid_data = read_squad2("valid")
+        squad2_valid_data = read_squad2("validation")
 
         squad2_train_dataset = prepare_features(
             squad2_train_data, config["num_training_examples"], mode="train"

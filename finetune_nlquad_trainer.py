@@ -84,7 +84,7 @@ if __name__ == "__main__":
     if config["squad_v2"]:
         logger.info("Reading SQuAD v2 data")
         squad2_train_data = read_squad2("train")
-        squad2_valid_data = read_squad2("valid")
+        squad2_valid_data = read_squad2("validation")
 
         valid_data = interleave(squad2_valid_data, valid_data, config["seed"])
         eval_data = interleave(squad2_valid_data, eval_data, config["seed"])
