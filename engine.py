@@ -135,7 +135,7 @@ class Engine:
 
             if batch_idx % self.config["print_freq"] == 0:
                 print(
-                    f"Epoch: {epoch+1} \t Batch: {batch_idx+1} \t Loss: {loss.item()}"
+                    f"Epoch: {epoch+1} \t Batch: {batch_idx} \t Loss: {loss.item()}"
                 )
 
         print("Training Loss: ", sum(losses) / len(losses))
