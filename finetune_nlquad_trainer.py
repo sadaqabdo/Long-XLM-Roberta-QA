@@ -9,21 +9,12 @@ import datasets
 import numpy as np
 import torch
 import transformers
-from transformers import (
-    Trainer,
-    TrainingArguments,
-    XLMRobertaTokenizerFast,
-    default_data_collator,
-)
+from transformers import (Trainer, TrainingArguments, XLMRobertaTokenizerFast,
+                          default_data_collator)
 
 from config import config
-from dataset import (
-    cast_dataset_features,
-    interleave,
-    prepare_features,
-    read_nlquad,
-    read_squad2,
-)
+from dataset import (cast_dataset_features, interleave, prepare_features,
+                     read_nlquad, read_squad2)
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -148,7 +139,7 @@ if __name__ == "__main__":
         seed=config["seed"],
         metric_for_best_model="f1",
         logging_dir=config["output_dir"],
-        save_strategy='no',
+        save_strategy="no",
         do_train=True,
         do_eval=True,
         do_predict=True,

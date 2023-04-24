@@ -13,14 +13,8 @@ import transformers
 from transformers import XLMRobertaTokenizerFast
 
 from config import config
-from dataset import (
-    cast_dataset_features,
-    interleave,
-    make_dataloaders,
-    prepare_features,
-    read_nlquad,
-    read_squad2,
-)
+from dataset import (cast_dataset_features, interleave, make_dataloaders,
+                     prepare_features, read_nlquad, read_squad2)
 from engine import Engine, get_optimizer, get_scheduler
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics

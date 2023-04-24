@@ -134,9 +134,7 @@ class Engine:
                 raise ValueError("Loss is nan")
 
             if batch_idx % self.config["print_freq"] == 0:
-                print(
-                    f"Epoch: {epoch+1} \t Batch: {batch_idx} \t Loss: {loss.item()}"
-                )
+                print(f"Epoch: {epoch+1} \t Batch: {batch_idx} \t Loss: {loss.item()}")
 
         print("Training Loss: ", sum(losses) / len(losses))
         return sum(losses) / len(losses)
