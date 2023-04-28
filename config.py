@@ -10,7 +10,7 @@ config = {
     "max_grad_norm": 1.0,
     "weight_decay": 1e-2,
     "epsilon": 1e-8,
-    "warmup_steps": 1000,
+    "warmup_steps": 500,
     "nlquad_num_training_examples": -1,
     "nlquad_num_validating_examples": -1,
     "nlquad_num_evaluation_examples": -1,
