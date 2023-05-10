@@ -101,7 +101,7 @@ if __name__ == "__main__":
         valid_data = interleave(nlquad_valid_data, squad_valid_data, config["seed"])
         num_valid_examples = (
             config["nlquad_num_validating_examples"]
-            + config["squad_num_validating_examples"]
+            + config["squadv2_num_validating_examples"]
         )
     else:
         valid_data = nlquad_valid_data
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         eval_data = interleave(nlquad_eval_data, squad_valid_data, config["seed"])
         num_eval_examples = (
             config["nlquad_num_evaluation_examples"]
-            + config["squad_num_evaluation_examples"]
+            + config["squadv2_num_evaluation_examples"]
         )
     else:
         eval_data = nlquad_eval_data
