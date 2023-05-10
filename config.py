@@ -14,7 +14,7 @@ config = {
     "nlquad_num_training_examples": -1,
     "nlquad_num_validating_examples": -1,
     "nlquad_num_evaluation_examples": -1,
-    "squad_v2": False,
+    "squad_v2": True,
     "squadv2_num_training_examples": -1,
     "squadv2_num_validating_examples": -1,
     "squadv2_num_evaluation_examples": -1,
