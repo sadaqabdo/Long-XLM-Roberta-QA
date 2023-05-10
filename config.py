@@ -2,7 +2,7 @@ import torch
 
 config = {
     "seed": 42,
-    "epochs": 5,
+    "epochs": 10,
     "batch_size": 5,
     "max_length": 4096,
     "doc_stride": 512,
