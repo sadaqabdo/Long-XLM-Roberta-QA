@@ -16,6 +16,8 @@ from transformers import (
     XLMRobertaTokenizerFast,
     default_data_collator,
 )
+from transformers.trainer_callback import TrainerControl, TrainerState
+from transformers.training_args import TrainingArguments
 
 from config import config
 from dataset import (
@@ -56,35 +58,18 @@ class PrintCallback(TrainerCallback):
         if state.is_local_process_zero:
             print(logs)
 
-    def on_step_begin(self, args, state, control, logs=None, **kwargs):
-        print("Step end", logs)
-    def on_step_end(self, args, state, control, logs=None, **kwargs):
-        print("Step begin", logs)
-
-    def on_epoch_begin(self, args, state, control, logs=None, **kwargs):
-        print("Epoch begin", logs)
+    def on_step_begin(self, args, state, control, **kwargs):
+        return super().on_step_begin(args, state, control, **kwargs)
     
-    def on_epoch_end(self, args, state, control, logs=None, **kwargs):
-        print("Epoch end", logs)
+    def on_step_end(self, args, state, control, **kwargs):
+        return super().on_step_end(args, state, control, **kwargs)
     
-    def on_train_begin(self, args, state, control, logs=None, **kwargs):
-        print("Train begin", logs)
-
-    def on_train_end(self, args, state, control, logs=None, **kwargs):
-        print("Train end", logs)
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        return super().on_epoch_begin(args, state, control, **kwargs)
     
-    def on_evaluate_begin(self, args, state, control, logs=None, **kwargs):
-        print("Evaluate begin", logs)
-    
-    def on_evaluate_end(self, args, state, control, logs=None, **kwargs):
-        print("Evaluate end", logs)
-    
-    def on_predict_begin(self, args, state, control, logs=None, **kwargs):
-        print("Predict begin", logs)
-    
-    def on_predict_end(self, args, state, control, logs=None, **kwargs):
-        print("Predict end", logs)
-
+    def on_epoch_end(self, args, state, control, **kwargs):
+        return super().on_epoch_end(args, state, control, **kwargs)
+        
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
