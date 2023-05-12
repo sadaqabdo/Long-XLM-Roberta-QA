@@ -11,6 +11,7 @@ import torch
 import transformers
 from transformers import (
     Trainer,
+    TrainerCallback,
     TrainingArguments,
     XLMRobertaTokenizerFast,
     default_data_collator,
@@ -47,6 +48,43 @@ datasets.utils.logging.set_verbosity_error()
 transformers.utils.logging.set_verbosity_error()
 
 datasets.disable_caching()
+
+
+class PrintCallback(TrainerCallback):
+    def onlog(self, args, state, control, logs=None, **kwargs):
+        _ = logs.pop("total_flos", None)
+        if state.is_local_process_zero:
+            print(logs)
+
+    def on_step_begin(self, args, state, control, logs=None, **kwargs):
+        print("Step end", logs)
+    def on_step_end(self, args, state, control, logs=None, **kwargs):
+        print("Step begin", logs)
+
+    def on_epoch_begin(self, args, state, control, logs=None, **kwargs):
+        print("Epoch begin", logs)
+    
+    def on_epoch_end(self, args, state, control, logs=None, **kwargs):
+        print("Epoch end", logs)
+    
+    def on_train_begin(self, args, state, control, logs=None, **kwargs):
+        print("Train begin", logs)
+
+    def on_train_end(self, args, state, control, logs=None, **kwargs):
+        print("Train end", logs)
+    
+    def on_evaluate_begin(self, args, state, control, logs=None, **kwargs):
+        print("Evaluate begin", logs)
+    
+    def on_evaluate_end(self, args, state, control, logs=None, **kwargs):
+        print("Evaluate end", logs)
+    
+    def on_predict_begin(self, args, state, control, logs=None, **kwargs):
+        print("Predict begin", logs)
+    
+    def on_predict_end(self, args, state, control, logs=None, **kwargs):
+        print("Predict end", logs)
+
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
@@ -164,6 +202,7 @@ if __name__ == "__main__":
         eval_dataset=valid_dataset,
         data_collator=default_data_collator,
         tokenizer=config["tokenizer"],
+        callbacks=[PrintCallback],
     )
 
     logger.info("Training model")
