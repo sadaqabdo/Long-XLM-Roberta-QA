@@ -11,7 +11,6 @@ import torch
 import transformers
 from transformers import (Trainer, TrainerCallback, TrainingArguments,
                           XLMRobertaTokenizerFast, default_data_collator)
-from transformers.training_args import TrainingArguments
 
 from config import config
 from dataset import (cast_dataset_features, interleave, prepare_features,
