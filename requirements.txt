@@ -3,4 +3,4 @@ transformers
 sentencepiece
 datasets
 evaluate
-nltk
+accelerate

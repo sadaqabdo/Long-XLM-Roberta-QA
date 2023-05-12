@@ -9,23 +9,13 @@ import datasets
 import numpy as np
 import torch
 import transformers
-from transformers import (
-    Trainer,
-    TrainerCallback,
-    TrainingArguments,
-    XLMRobertaTokenizerFast,
-    default_data_collator,
-)
+from transformers import (Trainer, TrainerCallback, TrainingArguments,
+                          XLMRobertaTokenizerFast, default_data_collator)
 from transformers.training_args import TrainingArguments
 
 from config import config
-from dataset import (
-    cast_dataset_features,
-    interleave,
-    prepare_features,
-    read_nlquad,
-    read_squad2,
-)
+from dataset import (cast_dataset_features, interleave, prepare_features,
+                     read_nlquad, read_squad2)
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -48,8 +38,6 @@ transformers.utils.logging.set_verbosity_info()
 datasets.utils.logging.set_verbosity_error()
 transformers.utils.logging.set_verbosity_error()
 
-datasets.disable_caching()
-
 
 class PrintCallback(TrainerCallback):
     def onlog(self, args, state, control, logs=None, **kwargs):
@@ -59,21 +47,24 @@ class PrintCallback(TrainerCallback):
 
     def on_step_begin(self, args, state, control, **kwargs):
         return super().on_step_begin(args, state, control, **kwargs)
-    
+
     def on_step_end(self, args, state, control, **kwargs):
         return super().on_step_end(args, state, control, **kwargs)
-    
+
     def on_epoch_begin(self, args, state, control, **kwargs):
         return super().on_epoch_begin(args, state, control, **kwargs)
-    
+
     def on_epoch_end(self, args, state, control, **kwargs):
         return super().on_epoch_end(args, state, control, **kwargs)
-        
+
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
     # assert config["device"] == "cuda", "GPU not found"
     # assert torch.backends.cudnn.enabled, "CUDNN is not enabled"
+
+
+    datasets.disable_caching()
 
     random.seed(config["seed"])
     np.random.seed(config["seed"])
