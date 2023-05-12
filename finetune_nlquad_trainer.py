@@ -16,7 +16,6 @@ from transformers import (
     XLMRobertaTokenizerFast,
     default_data_collator,
 )
-from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.training_args import TrainingArguments
 
 from config import config
