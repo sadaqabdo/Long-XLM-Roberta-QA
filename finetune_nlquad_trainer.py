@@ -9,12 +9,21 @@ import datasets
 import numpy as np
 import torch
 import transformers
-from transformers import (Trainer, TrainingArguments, XLMRobertaTokenizerFast,
-                          default_data_collator)
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    XLMRobertaTokenizerFast,
+    default_data_collator,
+)
 
 from config import config
-from dataset import (cast_dataset_features, interleave, prepare_features,
-                     read_nlquad, read_squad2)
+from dataset import (
+    cast_dataset_features,
+    interleave,
+    prepare_features,
+    read_nlquad,
+    read_squad2,
+)
 from model import XLMRobertaLongForQuestionAnswering
 from processing import calculate_metrics
 
@@ -36,6 +45,8 @@ datasets.utils.logging.set_verbosity_warning()
 transformers.utils.logging.set_verbosity_info()
 datasets.utils.logging.set_verbosity_error()
 transformers.utils.logging.set_verbosity_error()
+
+datasets.disable_caching()
 
 if __name__ == "__main__":
     # assert torch.cuda.device_count() > 0, "No GPU found"
